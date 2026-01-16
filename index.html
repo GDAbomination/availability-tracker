@@ -18,6 +18,7 @@ h1 { text-align: center; }
 .controls {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 10px;
   font-size: 14px;
 }
@@ -58,6 +59,9 @@ h1 { text-align: center; }
 <div class="controls">
   <div id="userInfo"></div>
   <div>
+    Timezone:
+    <select id="tzSelect"></select>
+    &nbsp;
     Share:
     <input id="shareLink" size="28" readonly>
   </div>
@@ -69,7 +73,6 @@ h1 { text-align: center; }
 /* ---------- CONSTANTS ---------- */
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const ROWS = 48;
-const TOTAL_SLOTS = 7 * 48;
 const MS_PER_SLOT = 30 * 60 * 1000;
 
 /* ---------- ROOM ---------- */
@@ -95,8 +98,22 @@ if (!color) {
   localStorage.setItem("color_"+username, color);
 }
 
-const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-document.getElementById("userInfo").textContent = `${username} (${tz})`;
+/* ---------- TIMEZONE (AUTO + OVERRIDE) ---------- */
+let timezone =
+  localStorage.getItem("timezone") ||
+  Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+const tzSelect = document.getElementById("tzSelect");
+Intl.supportedValuesOf("timeZone").forEach(tz => {
+  const opt = document.createElement("option");
+  opt.value = tz;
+  opt.textContent = tz;
+  tzSelect.appendChild(opt);
+});
+tzSelect.value = timezone;
+
+document.getElementById("userInfo").textContent =
+  `${username} (${timezone})`;
 
 /* ---------- STORAGE ---------- */
 const roomKey = "room_"+room;
@@ -108,18 +125,29 @@ function save() {
 }
 
 /* ---------- TIME MODEL ---------- */
-// Anchor = user's local midnight, converted once to UTC
-const localMidnight = new Date();
-localMidnight.setHours(0,0,0,0);
-const anchorUTC = localMidnight.getTime();
+let anchorUTC = computeAnchor();
 
-/* Convert grid position → UTC slot */
-function gridToSlot(day, row) {
-  const localMs = anchorUTC + (day * ROWS + row) * MS_PER_SLOT;
-  return Math.floor(localMs / MS_PER_SLOT);
+function computeAnchor() {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric"
+  }).formatToParts(now);
+
+  const y = Number(parts.find(p=>p.type==="year").value);
+  const m = Number(parts.find(p=>p.type==="month").value);
+  const d = Number(parts.find(p=>p.type==="day").value);
+
+  return Date.UTC(y, m - 1, d);
 }
 
-/* Convert row → local time label */
+/* ---------- GRID MAPPING ---------- */
+function gridToSlot(day, row) {
+  return Math.floor((anchorUTC + (day * ROWS + row) * MS_PER_SLOT) / MS_PER_SLOT);
+}
+
 function rowLabel(row) {
   const d = new Date(anchorUTC + row * MS_PER_SLOT);
   return d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
@@ -195,6 +223,17 @@ function draw() {
 
 window.onmouseup = () => dragging = false;
 
+/* ---------- TIMEZONE CHANGE ---------- */
+tzSelect.onchange = () => {
+  timezone = tzSelect.value;
+  localStorage.setItem("timezone", timezone);
+  document.getElementById("userInfo").textContent =
+    `${username} (${timezone})`;
+  anchorUTC = computeAnchor();
+  draw();
+};
+
+/* ---------- INIT ---------- */
 draw();
 </script>
 
