@@ -1,131 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Team Availability</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<title>Team Availability</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #0e0e0e;
-      color: #eee;
-      margin: 0;
-      padding: 20px;
-    }
+<style>
+body {
+  font-family: system-ui, sans-serif;
+  background: #0b0b0b;
+  color: #eee;
+  padding: 16px;
+}
 
-    h1 {
-      text-align: center;
-    }
+h1 { text-align: center; }
 
-    .container {
-      overflow-x: auto;
-      margin-top: 20px;
-    }
+.controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
 
-    .grid {
-      display: grid;
-      grid-template-columns: 80px repeat(7, 1fr);
-      gap: 1px;
-    }
+.grid {
+  display: grid;
+  grid-template-columns: 70px repeat(7, 1fr);
+  gap: 1px;
+}
 
-    .header {
-      text-align: center;
-      font-weight: bold;
-      background: #1a1a1a;
-      padding: 6px 0;
-    }
+.header, .time {
+  background: #141414;
+  padding: 4px;
+  font-size: 12px;
+}
 
-    .time {
-      font-size: 12px;
-      padding-right: 6px;
-      text-align: right;
-      background: #141414;
-    }
+.header { text-align: center; font-weight: bold; }
+.time { text-align: right; }
 
-    .cell {
-      background: #1f1f1f;
-      cursor: pointer;
-      height: 22px;
-    }
+.cell {
+  background: #1e1e1e;
+  height: 22px;
+  cursor: pointer;
+}
 
-    .cell.active {
-      background: var(--user-color);
-    }
-
-    .cell:hover {
-      outline: 1px solid #555;
-    }
-  </style>
+.cell:hover {
+  outline: 1px solid #555;
+}
+</style>
 </head>
+
 <body>
 
 <h1>Team Availability</h1>
 
-<div class="container">
-  <div class="grid" id="grid"></div>
+<div class="controls">
+  <div id="userInfo"></div>
+  <div>
+    Share link:
+    <input id="shareLink" size="30" readonly>
+  </div>
 </div>
 
+<div class="grid" id="grid"></div>
+
 <script>
-  // ----- USER SETUP -----
-  let username = localStorage.getItem("username");
-  if (!username) {
-    username = prompt("Enter your name:");
-    if (!username) location.reload();
-    localStorage.setItem("username", username);
-  }
+/* ---------- SETUP ---------- */
+const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const SLOTS = 48;
+const roomId = new URLSearchParams(location.search).get("room") || crypto.randomUUID();
+history.replaceState(null,"",`?room=${roomId}`);
 
-  const colorKey = "color_" + username;
-  let userColor = localStorage.getItem(colorKey);
-  if (!userColor) {
-    userColor = `hsl(${Math.random() * 360}, 70%, 50%)`;
-    localStorage.setItem(colorKey, userColor);
-  }
+const shareLink = document.getElementById("shareLink");
+shareLink.value = location.href;
 
-  document.documentElement.style.setProperty("--user-color", userColor);
+/* ---------- USER ---------- */
+let username = localStorage.getItem("username");
+if (!username) {
+  username = prompt("Enter your name:");
+  localStorage.setItem("username", username);
+}
 
-  const storageKey = "availability_" + username;
-  let availability = JSON.parse(localStorage.getItem(storageKey)) || {};
+const userKey = `room_${roomId}_user_${username}`;
+const colorKey = `color_${username}`;
+let color = localStorage.getItem(colorKey);
+if (!color) {
+  color = `hsl(${Math.random()*360},70%,50%)`;
+  localStorage.setItem(colorKey, color);
+}
 
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const grid = document.getElementById("grid");
+document.getElementById("userInfo").textContent =
+  `${username} (${Intl.DateTimeFormat().resolvedOptions().timeZone})`;
 
-  // ----- HEADER ROW -----
-  grid.appendChild(document.createElement("div"));
-  days.forEach(day => {
-    const d = document.createElement("div");
-    d.textContent = day;
-    d.className = "header";
-    grid.appendChild(d);
-  });
+/* ---------- DATA ---------- */
+let allData = JSON.parse(localStorage.getItem(`room_${roomId}`)) || {};
+if (!allData[username]) allData[username] = {};
+localStorage.setItem(`room_${roomId}`, JSON.stringify(allData));
 
-  // ----- TIME + CELLS -----
-  for (let row = 0; row < 48; row++) {
-    const hour = Math.floor(row / 2);
-    const minutes = row % 2 === 0 ? "00" : "30";
-    const label = `${hour.toString().padStart(2, "0")}:${minutes}`;
+/* ---------- GRID ---------- */
+const grid = document.getElementById("grid");
 
-    const timeCell = document.createElement("div");
-    timeCell.textContent = label;
-    timeCell.className = "time";
-    grid.appendChild(timeCell);
+// header
+grid.appendChild(document.createElement("div"));
+days.forEach(d=>{
+  const h=document.createElement("div");
+  h.textContent=d;
+  h.className="header";
+  grid.appendChild(h);
+});
 
-    for (let col = 0; col < 7; col++) {
-      const id = `${col}-${row}`;
-      const cell = document.createElement("div");
-      cell.className = "cell";
+// drag state
+let dragging = false;
+let dragValue = true;
 
-      if (availability[id]) cell.classList.add("active");
+function utcIndex(day, row) {
+  const local = new Date();
+  local.setUTCHours(0,0,0,0);
+  return day * SLOTS + row;
+}
 
-      cell.onclick = () => {
-        availability[id] = !availability[id];
-        cell.classList.toggle("active");
-        localStorage.setItem(storageKey, JSON.stringify(availability));
-      };
+for (let r=0;r<SLOTS;r++) {
+  const h=Math.floor(r/2);
+  const m=r%2?"30":"00";
+  const t=document.createElement("div");
+  t.className="time";
+  t.textContent=`${String(h).padStart(2,"0")}:${m}`;
+  grid.appendChild(t);
 
-      grid.appendChild(cell);
+  for (let d=0;d<7;d++) {
+    const idx = utcIndex(d,r);
+    const c=document.createElement("div");
+    c.className="cell";
+
+    function update() {
+      let count = 0;
+      Object.values(allData).forEach(u=>{
+        if (u[idx]) count++;
+      });
+
+      if (allData[username][idx]) {
+        c.style.background = color;
+      } else if (count>0) {
+        c.style.background = `rgba(255,255,255,${count*0.15})`;
+      } else {
+        c.style.background = "#1e1e1e";
+      }
     }
+
+    update();
+
+    c.onmousedown=()=>{
+      dragging=true;
+      dragValue=!allData[username][idx];
+      allData[username][idx]=dragValue;
+      save();
+      updateAll();
+    };
+
+    c.onmouseenter=()=>{
+      if (!dragging) return;
+      allData[username][idx]=dragValue;
+      save();
+      updateAll();
+    };
+
+    c.onmouseup=()=>dragging=false;
+    window.onmouseup=()=>dragging=false;
+
+    grid.appendChild(c);
   }
+}
+
+function updateAll(){
+  document.querySelectorAll(".cell").forEach(c=>c.dispatchEvent(new Event("refresh")));
+}
+
+function save(){
+  localStorage.setItem(`room_${roomId}`, JSON.stringify(allData));
+}
 </script>
 
 </body>
