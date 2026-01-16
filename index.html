@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Availability</title>
+<title>Team Availability</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -18,7 +18,6 @@ h1 { text-align: center; }
 .controls {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   margin-bottom: 10px;
   font-size: 14px;
 }
@@ -53,8 +52,8 @@ h1 { text-align: center; }
 <div class="controls">
   <div id="userInfo"></div>
   <div>
-    Timezone:
-    <select id="tzSelect"></select>
+    Share link:
+    <input id="shareLink" size="28" readonly>
   </div>
 </div>
 
@@ -64,6 +63,18 @@ h1 { text-align: center; }
 /* ---------------- CONSTANTS ---------------- */
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const ROWS = 48;
+const TOTAL = DAYS.length * ROWS;
+
+/* ---------------- ROOM ---------------- */
+const params = new URLSearchParams(location.search);
+let room = params.get("room");
+if (!room) {
+  room = crypto.randomUUID().slice(0,8);
+  params.set("room", room);
+  history.replaceState(null,"","?"+params.toString());
+}
+
+document.getElementById("shareLink").value = location.href;
 
 /* ---------------- USER ---------------- */
 let username = localStorage.getItem("username");
@@ -78,35 +89,37 @@ if (!color) {
   localStorage.setItem("color_"+username, color);
 }
 
-/* ---------------- TIMEZONE ---------------- */
-const tzSelect = document.getElementById("tzSelect");
-const timezones = Intl.supportedValuesOf("timeZone");
-
-let timezone = localStorage.getItem("timezone") ||
+const timezone =
+  localStorage.getItem("timezone") ||
   Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-timezones.forEach(tz=>{
-  const opt=document.createElement("option");
-  opt.value=tz;
-  opt.textContent=tz;
-  tzSelect.appendChild(opt);
-});
-
-tzSelect.value = timezone;
-
-tzSelect.onchange = () => {
-  timezone = tzSelect.value;
-  localStorage.setItem("timezone", timezone);
-  draw();
-};
 
 document.getElementById("userInfo").textContent =
   `${username} (${timezone})`;
 
 /* ---------------- DATA ---------------- */
-let data = JSON.parse(localStorage.getItem("availability_"+username)) || {};
+const roomKey = "room_"+room;
+let roomData = JSON.parse(localStorage.getItem(roomKey)) || {};
+if (!roomData[username]) roomData[username] = {};
+
 function save() {
-  localStorage.setItem("availability_"+username, JSON.stringify(data));
+  localStorage.setItem(roomKey, JSON.stringify(roomData));
+}
+
+/* ---------------- TIME MATH ---------------- */
+function localSlotToUTC(day, row) {
+  const local = new Date();
+  local.setHours(0,0,0,0);
+  local.setDate(local.getDate() + day);
+  local.setMinutes(row * 30);
+
+  return Math.floor(local.getTime() / (30*60*1000));
+}
+
+function slotLabel(row) {
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  d.setMinutes(row * 30);
+  return d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
 }
 
 /* ---------------- GRID ---------------- */
@@ -123,43 +136,51 @@ DAYS.forEach(d=>{
   grid.appendChild(h);
 });
 
-function slotToLocalLabel(slot) {
-  const base = new Date(Date.UTC(2024,0,1,0,0));
-  base.setUTCMinutes(slot * 30);
-  return base.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: timezone
-  });
+function heatColor(count, max) {
+  if (count === 0) return "#1e1e1e";
+  const t = count / max;
+  return `hsl(210, 80%, ${30 + t*30}%)`;
 }
 
 function draw() {
   grid.querySelectorAll(".time,.cell").forEach(e=>e.remove());
 
+  const users = Object.keys(roomData);
+  const maxOverlap = users.length;
+
   for (let r=0;r<ROWS;r++) {
     const t=document.createElement("div");
     t.className="time";
-    t.textContent = slotToLocalLabel(r);
+    t.textContent = slotLabel(r);
     grid.appendChild(t);
 
     for (let d=0;d<7;d++) {
-      const idx = d*ROWS + r;
+      const utcIdx = localSlotToUTC(d, r);
       const c=document.createElement("div");
       c.className="cell";
 
-      if (data[idx]) c.style.background = color;
+      let overlap = 0;
+      users.forEach(u=>{
+        if (roomData[u][utcIdx]) overlap++;
+      });
+
+      if (roomData[username][utcIdx]) {
+        c.style.background = color;
+      } else {
+        c.style.background = heatColor(overlap, maxOverlap);
+      }
 
       c.onmousedown = () => {
         dragging = true;
-        dragValue = !data[idx];
-        data[idx] = dragValue;
+        dragValue = !roomData[username][utcIdx];
+        roomData[username][utcIdx] = dragValue;
         save();
         draw();
       };
 
       c.onmouseenter = () => {
         if (!dragging) return;
-        data[idx] = dragValue;
+        roomData[username][utcIdx] = dragValue;
         save();
         draw();
       };
