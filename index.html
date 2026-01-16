@@ -92,7 +92,6 @@ if (!username) {
 
 // Rich deep blue for user
 const color = "#001F4D"; 
-
 document.getElementById("userInfo").textContent = username;
 
 /* ---------- STORAGE ---------- */
@@ -104,15 +103,22 @@ function save() {
   localStorage.setItem(roomKey, JSON.stringify(roomData));
 }
 
-/* ---------- TIME MODEL ---------- */
-// Anchor always midnight local (ignoring timezone)
+/* ---------- GRID ANCHOR ---------- */
+// Reference UTC midnight for storing slots
 const anchorUTC = new Date();
-anchorUTC.setHours(0,0,0,0); // always midnight
+anchorUTC.setUTCHours(0,0,0,0);
 const anchorTime = anchorUTC.getTime();
 
 /* ---------- GRID MAPPING ---------- */
-function gridToSlot(day, row) {
+function utcSlotForRow(day,row) {
   return anchorTime + (day * ROWS + row) * MS_PER_SLOT;
+}
+
+// Convert UTC slot to local row index for the viewer
+function localRowIndex(utcSlot) {
+  const offsetMs = new Date().getTimezoneOffset() * 60 * 1000; // local offset in ms
+  const localTime = utcSlot - offsetMs;
+  return Math.floor((localTime - anchorTime)/MS_PER_SLOT) % ROWS;
 }
 
 function rowLabel(row) {
@@ -125,7 +131,7 @@ const grid = document.getElementById("grid");
 let isDragging = false;
 let dragValue = true;
 
-/* Headers */
+// Headers
 grid.appendChild(document.createElement("div"));
 DAYS.forEach(d => {
   const h = document.createElement("div");
@@ -136,8 +142,8 @@ DAYS.forEach(d => {
 
 // Heatmap gradient: gray → deep blue
 function heatColor(count, max) {
-  if (count === 0) return "#1e1e1e"; // background
-  const t = count / max; // 0 → 1
+  if (count === 0) return "#1e1e1e";
+  const t = count/max;
   const r = Math.round(50*(1-t) + 0*t);
   const g = Math.round(50*(1-t) + 51*t);
   const b = Math.round(50*(1-t) + 77*t);
@@ -145,7 +151,7 @@ function heatColor(count, max) {
 }
 
 function draw() {
-  grid.querySelectorAll(".time,.cell").forEach(e => e.remove());
+  grid.querySelectorAll(".time,.cell").forEach(e=>e.remove());
 
   const users = Object.keys(roomData);
   const maxOverlap = users.length || 1;
@@ -157,21 +163,25 @@ function draw() {
     grid.appendChild(t);
 
     for (let d=0; d<7; d++) {
-      const slot = gridToSlot(d, r);
+      const slotUTC = utcSlotForRow(d,r);
       const c = document.createElement("div");
       c.className = "cell";
-      c.dataset.slot = slot;
+      c.dataset.slot = slotUTC;
 
+      // Count overlaps shifted for viewer
       let overlap = 0;
-      users.forEach(u => {
-        if (roomData[u][slot]) overlap++;
+      users.forEach(u=>{
+        Object.keys(roomData[u] || {}).forEach(s=>{
+          const localRow = localRowIndex(Number(s));
+          const localCol = Math.floor((Number(s) - anchorTime)/MS_PER_SLOT/ROWS) % 7;
+          if(localRow===r && localCol===d) overlap++;
+        });
       });
 
-      if (roomData[username][slot]) {
-        c.style.background = color;
-      } else {
-        c.style.background = heatColor(overlap, maxOverlap);
-      }
+      // Determine background color
+      const isUserCell = roomData[username][slotUTC];
+      if (isUserCell) c.style.background = color;
+      else c.style.background = heatColor(overlap,maxOverlap);
 
       grid.appendChild(c);
     }
@@ -179,8 +189,8 @@ function draw() {
 }
 
 /* ---------- DRAG HANDLING ---------- */
-grid.addEventListener("mousedown", e => {
-  if (!e.target.classList.contains("cell")) return;
+grid.addEventListener("mousedown", e=>{
+  if(!e.target.classList.contains("cell")) return;
   isDragging = true;
   dragValue = !roomData[username][e.target.dataset.slot];
   roomData[username][e.target.dataset.slot] = dragValue;
@@ -188,19 +198,17 @@ grid.addEventListener("mousedown", e => {
   draw();
 });
 
-document.addEventListener("mousemove", e => {
-  if (!isDragging) return;
+document.addEventListener("mousemove", e=>{
+  if(!isDragging) return;
   const target = e.target;
-  if (!target.classList.contains("cell")) return;
+  if(!target.classList.contains("cell")) return;
   const slot = target.dataset.slot;
   roomData[username][slot] = dragValue;
   save();
   draw();
 });
 
-document.addEventListener("mouseup", () => {
-  isDragging = false;
-});
+document.addEventListener("mouseup", ()=>{isDragging=false;});
 
 /* ---------- INIT ---------- */
 draw();
