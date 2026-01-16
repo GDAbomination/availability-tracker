@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Team Availability</title>
@@ -34,8 +34,14 @@ h1 { text-align: center; }
   font-size: 12px;
 }
 
-.header { text-align: center; font-weight: bold; }
-.time { text-align: right; }
+.header {
+  text-align: center;
+  font-weight: bold;
+}
+
+.time {
+  text-align: right;
+}
 
 .cell {
   background: #1e1e1e;
@@ -52,7 +58,7 @@ h1 { text-align: center; }
 <div class="controls">
   <div id="userInfo"></div>
   <div>
-    Share link:
+    Share:
     <input id="shareLink" size="28" readonly>
   </div>
 </div>
@@ -60,23 +66,23 @@ h1 { text-align: center; }
 <div class="grid" id="grid"></div>
 
 <script>
-/* ---------------- CONSTANTS ---------------- */
+/* ---------- CONSTANTS ---------- */
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const ROWS = 48;
-const TOTAL = DAYS.length * ROWS;
+const TOTAL_SLOTS = 7 * 48;
+const MS_PER_SLOT = 30 * 60 * 1000;
 
-/* ---------------- ROOM ---------------- */
+/* ---------- ROOM ---------- */
 const params = new URLSearchParams(location.search);
 let room = params.get("room");
 if (!room) {
-  room = crypto.randomUUID().slice(0,8);
+  room = Math.random().toString(36).slice(2,8);
   params.set("room", room);
   history.replaceState(null,"","?"+params.toString());
 }
-
 document.getElementById("shareLink").value = location.href;
 
-/* ---------------- USER ---------------- */
+/* ---------- USER ---------- */
 let username = localStorage.getItem("username");
 if (!username) {
   username = prompt("Enter your name");
@@ -89,14 +95,10 @@ if (!color) {
   localStorage.setItem("color_"+username, color);
 }
 
-const timezone =
-  localStorage.getItem("timezone") ||
-  Intl.DateTimeFormat().resolvedOptions().timeZone;
+const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+document.getElementById("userInfo").textContent = `${username} (${tz})`;
 
-document.getElementById("userInfo").textContent =
-  `${username} (${timezone})`;
-
-/* ---------------- DATA ---------------- */
+/* ---------- STORAGE ---------- */
 const roomKey = "room_"+room;
 let roomData = JSON.parse(localStorage.getItem(roomKey)) || {};
 if (!roomData[username]) roomData[username] = {};
@@ -105,66 +107,67 @@ function save() {
   localStorage.setItem(roomKey, JSON.stringify(roomData));
 }
 
-/* ---------------- TIME MATH ---------------- */
-function localSlotToUTC(day, row) {
-  const local = new Date();
-  local.setHours(0,0,0,0);
-  local.setDate(local.getDate() + day);
-  local.setMinutes(row * 30);
+/* ---------- TIME MODEL ---------- */
+// Anchor = user's local midnight, converted once to UTC
+const localMidnight = new Date();
+localMidnight.setHours(0,0,0,0);
+const anchorUTC = localMidnight.getTime();
 
-  return Math.floor(local.getTime() / (30*60*1000));
+/* Convert grid position → UTC slot */
+function gridToSlot(day, row) {
+  const localMs = anchorUTC + (day * ROWS + row) * MS_PER_SLOT;
+  return Math.floor(localMs / MS_PER_SLOT);
 }
 
-function slotLabel(row) {
-  const d = new Date();
-  d.setHours(0,0,0,0);
-  d.setMinutes(row * 30);
+/* Convert row → local time label */
+function rowLabel(row) {
+  const d = new Date(anchorUTC + row * MS_PER_SLOT);
   return d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
 }
 
-/* ---------------- GRID ---------------- */
+/* ---------- GRID ---------- */
 const grid = document.getElementById("grid");
 let dragging = false;
 let dragValue = true;
 
-/* headers */
+/* Headers */
 grid.appendChild(document.createElement("div"));
-DAYS.forEach(d=>{
-  const h=document.createElement("div");
-  h.textContent=d;
-  h.className="header";
+DAYS.forEach(d => {
+  const h = document.createElement("div");
+  h.textContent = d;
+  h.className = "header";
   grid.appendChild(h);
 });
 
 function heatColor(count, max) {
   if (count === 0) return "#1e1e1e";
   const t = count / max;
-  return `hsl(210, 80%, ${30 + t*30}%)`;
+  return `hsl(210, 80%, ${30 + t*35}%)`;
 }
 
 function draw() {
-  grid.querySelectorAll(".time,.cell").forEach(e=>e.remove());
+  grid.querySelectorAll(".time,.cell").forEach(e => e.remove());
 
   const users = Object.keys(roomData);
-  const maxOverlap = users.length;
+  const maxOverlap = users.length || 1;
 
-  for (let r=0;r<ROWS;r++) {
-    const t=document.createElement("div");
-    t.className="time";
-    t.textContent = slotLabel(r);
+  for (let r=0; r<ROWS; r++) {
+    const t = document.createElement("div");
+    t.className = "time";
+    t.textContent = rowLabel(r);
     grid.appendChild(t);
 
-    for (let d=0;d<7;d++) {
-      const utcIdx = localSlotToUTC(d, r);
-      const c=document.createElement("div");
-      c.className="cell";
+    for (let d=0; d<7; d++) {
+      const slot = gridToSlot(d, r);
+      const c = document.createElement("div");
+      c.className = "cell";
 
       let overlap = 0;
-      users.forEach(u=>{
-        if (roomData[u][utcIdx]) overlap++;
+      users.forEach(u => {
+        if (roomData[u][slot]) overlap++;
       });
 
-      if (roomData[username][utcIdx]) {
+      if (roomData[username][slot]) {
         c.style.background = color;
       } else {
         c.style.background = heatColor(overlap, maxOverlap);
@@ -172,20 +175,18 @@ function draw() {
 
       c.onmousedown = () => {
         dragging = true;
-        dragValue = !roomData[username][utcIdx];
-        roomData[username][utcIdx] = dragValue;
+        dragValue = !roomData[username][slot];
+        roomData[username][slot] = dragValue;
         save();
         draw();
       };
 
       c.onmouseenter = () => {
         if (!dragging) return;
-        roomData[username][utcIdx] = dragValue;
+        roomData[username][slot] = dragValue;
         save();
         draw();
       };
-
-      c.onmouseup = () => dragging = false;
 
       grid.appendChild(c);
     }
