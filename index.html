@@ -60,9 +60,6 @@ h1 { text-align: center; }
 <div class="controls">
   <div id="userInfo"></div>
   <div>
-    Timezone:
-    <select id="tzSelect"></select>
-    &nbsp;
     Share:
     <input id="shareLink" size="28" readonly>
   </div>
@@ -96,22 +93,7 @@ if (!username) {
 // Rich deep blue for user
 const color = "#001F4D"; 
 
-/* ---------- TIMEZONE ---------- */
-let timezone =
-  localStorage.getItem("timezone") ||
-  Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-const tzSelect = document.getElementById("tzSelect");
-Intl.supportedValuesOf("timeZone").forEach(tz => {
-  const opt = document.createElement("option");
-  opt.value = tz;
-  opt.textContent = tz;
-  tzSelect.appendChild(opt);
-});
-tzSelect.value = timezone;
-
-document.getElementById("userInfo").textContent =
-  `${username} (${timezone})`;
+document.getElementById("userInfo").textContent = username;
 
 /* ---------- STORAGE ---------- */
 const roomKey = "room_"+room;
@@ -123,38 +105,18 @@ function save() {
 }
 
 /* ---------- TIME MODEL ---------- */
-// Compute midnight in selected timezone correctly
-function computeAnchor() {
-  const now = new Date();
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "numeric",
-    day: "numeric"
-  }).formatToParts(now);
-
-  const y = Number(parts.find(p => p.type === "year").value);
-  const m = Number(parts.find(p => p.type === "month").value);
-  const d = Number(parts.find(p => p.type === "day").value);
-
-  // Build ISO string for midnight
-  const tzMidnightStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}T00:00:00`;
-  
-  // Get the time at UTC that corresponds to midnight in the timezone
-  const tzMidnight = new Date(new Date(tzMidnightStr + "Z").getTime() - 
-                              (new Date().getTimezoneOffset()*60000));
-  return tzMidnight.getTime();
-}
-
-let anchorUTC = computeAnchor();
+// Anchor always midnight local (ignoring timezone)
+const anchorUTC = new Date();
+anchorUTC.setHours(0,0,0,0); // always midnight
+const anchorTime = anchorUTC.getTime();
 
 /* ---------- GRID MAPPING ---------- */
 function gridToSlot(day, row) {
-  return Math.floor((anchorUTC + (day * ROWS + row) * MS_PER_SLOT) / MS_PER_SLOT);
+  return anchorTime + (day * ROWS + row) * MS_PER_SLOT;
 }
 
 function rowLabel(row) {
-  const d = new Date(anchorUTC + row * MS_PER_SLOT);
+  const d = new Date(anchorTime + row * MS_PER_SLOT);
   return d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
 }
 
@@ -239,16 +201,6 @@ document.addEventListener("mousemove", e => {
 document.addEventListener("mouseup", () => {
   isDragging = false;
 });
-
-/* ---------- TIMEZONE CHANGE ---------- */
-tzSelect.onchange = () => {
-  timezone = tzSelect.value;
-  localStorage.setItem("timezone", timezone);
-  document.getElementById("userInfo").textContent =
-    `${username} (${timezone})`;
-  anchorUTC = computeAnchor();
-  draw();
-};
 
 /* ---------- INIT ---------- */
 draw();
