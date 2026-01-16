@@ -92,9 +92,10 @@ if (!username) {
   localStorage.setItem("username", username);
 }
 
+// User color = deep blue
 let color = localStorage.getItem("color_"+username);
 if (!color) {
-  color = `hsl(${Math.random()*360},70%,50%)`;
+  color = "#003366"; // deep blue
   localStorage.setItem("color_"+username, color);
 }
 
@@ -167,10 +168,14 @@ DAYS.forEach(d => {
   grid.appendChild(h);
 });
 
+// Heatmap gradient: gray → deep blue
 function heatColor(count, max) {
-  if (count === 0) return "#1e1e1e";
-  const t = count / max;
-  return `hsl(210, 80%, ${30 + t*35}%)`;
+  if (count === 0) return "#1e1e1e"; // background
+  const t = count / max; // 0 → 1
+  const r = Math.round(50*(1-t) + 0*t);
+  const g = Math.round(50*(1-t) + 51*t);
+  const b = Math.round(50*(1-t) + 102*t);
+  return `rgb(${r},${g},${b})`;
 }
 
 function draw() {
@@ -196,7 +201,7 @@ function draw() {
       });
 
       if (roomData[username][slot]) {
-        c.style.background = color;
+        c.style.background = color; // deep blue
       } else {
         c.style.background = heatColor(overlap, maxOverlap);
       }
