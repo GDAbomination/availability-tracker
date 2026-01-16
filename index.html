@@ -92,14 +92,11 @@ if (!username) {
   localStorage.setItem("username", username);
 }
 
-// User color = deep blue
-let color = localStorage.getItem("color_"+username);
-if (!color) {
-  color = "#003366"; // deep blue
-  localStorage.setItem("color_"+username, color);
-}
+// Force deep blue user color
+let color = "#003366"; 
+localStorage.setItem("color_"+username, color);
 
-/* ---------- TIMEZONE (AUTO + OVERRIDE) ---------- */
+/* ---------- TIMEZONE ---------- */
 let timezone =
   localStorage.getItem("timezone") ||
   Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -156,7 +153,7 @@ function rowLabel(row) {
 
 /* ---------- GRID ---------- */
 const grid = document.getElementById("grid");
-let dragging = false;
+let isDragging = false;
 let dragValue = true;
 
 /* Headers */
@@ -200,22 +197,25 @@ function draw() {
         if (roomData[u][slot]) overlap++;
       });
 
+      // YOUR OWN COLOR
       if (roomData[username][slot]) {
-        c.style.background = color; // deep blue
+        c.style.background = color;
       } else {
         c.style.background = heatColor(overlap, maxOverlap);
       }
 
-      c.onmousedown = () => {
-        dragging = true;
+      // Mouse handlers
+      c.onmousedown = (e) => {
+        e.preventDefault();
+        isDragging = true;
         dragValue = !roomData[username][slot];
         roomData[username][slot] = dragValue;
         save();
         draw();
       };
 
-      c.onmouseenter = () => {
-        if (!dragging) return;
+      c.onmouseenter = (e) => {
+        if (!isDragging) return;
         roomData[username][slot] = dragValue;
         save();
         draw();
@@ -226,7 +226,7 @@ function draw() {
   }
 }
 
-window.onmouseup = () => dragging = false;
+window.onmouseup = () => { isDragging = false; };
 
 /* ---------- TIMEZONE CHANGE ---------- */
 tzSelect.onchange = () => {
