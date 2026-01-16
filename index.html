@@ -66,4 +66,67 @@
   <div class="grid" id="grid"></div>
 </div>
 
-<script
+<script>
+  // ----- USER SETUP -----
+  let username = localStorage.getItem("username");
+  if (!username) {
+    username = prompt("Enter your name:");
+    if (!username) location.reload();
+    localStorage.setItem("username", username);
+  }
+
+  const colorKey = "color_" + username;
+  let userColor = localStorage.getItem(colorKey);
+  if (!userColor) {
+    userColor = `hsl(${Math.random() * 360}, 70%, 50%)`;
+    localStorage.setItem(colorKey, userColor);
+  }
+
+  document.documentElement.style.setProperty("--user-color", userColor);
+
+  const storageKey = "availability_" + username;
+  let availability = JSON.parse(localStorage.getItem(storageKey)) || {};
+
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const grid = document.getElementById("grid");
+
+  // ----- HEADER ROW -----
+  grid.appendChild(document.createElement("div"));
+  days.forEach(day => {
+    const d = document.createElement("div");
+    d.textContent = day;
+    d.className = "header";
+    grid.appendChild(d);
+  });
+
+  // ----- TIME + CELLS -----
+  for (let row = 0; row < 48; row++) {
+    const hour = Math.floor(row / 2);
+    const minutes = row % 2 === 0 ? "00" : "30";
+    const label = `${hour.toString().padStart(2, "0")}:${minutes}`;
+
+    const timeCell = document.createElement("div");
+    timeCell.textContent = label;
+    timeCell.className = "time";
+    grid.appendChild(timeCell);
+
+    for (let col = 0; col < 7; col++) {
+      const id = `${col}-${row}`;
+      const cell = document.createElement("div");
+      cell.className = "cell";
+
+      if (availability[id]) cell.classList.add("active");
+
+      cell.onclick = () => {
+        availability[id] = !availability[id];
+        cell.classList.toggle("active");
+        localStorage.setItem(storageKey, JSON.stringify(availability));
+      };
+
+      grid.appendChild(cell);
+    }
+  }
+</script>
+
+</body>
+</html>
