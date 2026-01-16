@@ -48,6 +48,7 @@ h1 { text-align: center; }
   background: #1e1e1e;
   height: 22px;
   cursor: pointer;
+  user-select: none;
 }
 </style>
 </head>
@@ -92,9 +93,8 @@ if (!username) {
   localStorage.setItem("username", username);
 }
 
-// Force deep blue user color
-let color = "#003366"; 
-localStorage.setItem("color_"+username, color);
+// Richer deep blue color for the user
+const color = "#001F4D"; // very rich deep blue
 
 /* ---------- TIMEZONE ---------- */
 let timezone =
@@ -171,12 +171,16 @@ function heatColor(count, max) {
   const t = count / max; // 0 → 1
   const r = Math.round(50*(1-t) + 0*t);
   const g = Math.round(50*(1-t) + 51*t);
-  const b = Math.round(50*(1-t) + 102*t);
+  const b = Math.round(50*(1-t) + 77*t);
   return `rgb(${r},${g},${b})`;
 }
 
+// Store references to cells for drag
+let cellRefs = [];
+
 function draw() {
   grid.querySelectorAll(".time,.cell").forEach(e => e.remove());
+  cellRefs = [];
 
   const users = Object.keys(roomData);
   const maxOverlap = users.length || 1;
@@ -197,36 +201,45 @@ function draw() {
         if (roomData[u][slot]) overlap++;
       });
 
-      // YOUR OWN COLOR
+      // User color
       if (roomData[username][slot]) {
         c.style.background = color;
       } else {
         c.style.background = heatColor(overlap, maxOverlap);
       }
 
-      // Mouse handlers
-      c.onmousedown = (e) => {
-        e.preventDefault();
-        isDragging = true;
-        dragValue = !roomData[username][slot];
-        roomData[username][slot] = dragValue;
-        save();
-        draw();
-      };
-
-      c.onmouseenter = (e) => {
-        if (!isDragging) return;
-        roomData[username][slot] = dragValue;
-        save();
-        draw();
-      };
+      // Add data-slot attribute for global drag
+      c.dataset.slot = slot;
 
       grid.appendChild(c);
+      cellRefs.push(c);
     }
   }
 }
 
-window.onmouseup = () => { isDragging = false; };
+/* ---------- DRAG HANDLING ---------- */
+grid.addEventListener("mousedown", e => {
+  if (!e.target.classList.contains("cell")) return;
+  isDragging = true;
+  dragValue = !roomData[username][e.target.dataset.slot];
+  roomData[username][e.target.dataset.slot] = dragValue;
+  save();
+  draw();
+});
+
+document.addEventListener("mousemove", e => {
+  if (!isDragging) return;
+  const target = e.target;
+  if (!target.classList.contains("cell")) return;
+  const slot = target.dataset.slot;
+  roomData[username][slot] = dragValue;
+  save();
+  draw();
+});
+
+document.addEventListener("mouseup", () => {
+  isDragging = false;
+});
 
 /* ---------- TIMEZONE CHANGE ---------- */
 tzSelect.onchange = () => {
