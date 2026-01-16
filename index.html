@@ -93,8 +93,8 @@ if (!username) {
   localStorage.setItem("username", username);
 }
 
-// Richer deep blue color for the user
-const color = "#001F4D"; // very rich deep blue
+// Rich deep blue for user
+const color = "#001F4D"; 
 
 /* ---------- TIMEZONE ---------- */
 let timezone =
@@ -123,8 +123,7 @@ function save() {
 }
 
 /* ---------- TIME MODEL ---------- */
-let anchorUTC = computeAnchor();
-
+// Compute midnight in selected timezone correctly
 function computeAnchor() {
   const now = new Date();
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -134,12 +133,20 @@ function computeAnchor() {
     day: "numeric"
   }).formatToParts(now);
 
-  const y = Number(parts.find(p=>p.type==="year").value);
-  const m = Number(parts.find(p=>p.type==="month").value);
-  const d = Number(parts.find(p=>p.type==="day").value);
+  const y = Number(parts.find(p => p.type === "year").value);
+  const m = Number(parts.find(p => p.type === "month").value);
+  const d = Number(parts.find(p => p.type === "day").value);
 
-  return Date.UTC(y, m - 1, d);
+  // Build ISO string for midnight
+  const tzMidnightStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}T00:00:00`;
+  
+  // Get the time at UTC that corresponds to midnight in the timezone
+  const tzMidnight = new Date(new Date(tzMidnightStr + "Z").getTime() - 
+                              (new Date().getTimezoneOffset()*60000));
+  return tzMidnight.getTime();
 }
+
+let anchorUTC = computeAnchor();
 
 /* ---------- GRID MAPPING ---------- */
 function gridToSlot(day, row) {
@@ -175,12 +182,8 @@ function heatColor(count, max) {
   return `rgb(${r},${g},${b})`;
 }
 
-// Store references to cells for drag
-let cellRefs = [];
-
 function draw() {
   grid.querySelectorAll(".time,.cell").forEach(e => e.remove());
-  cellRefs = [];
 
   const users = Object.keys(roomData);
   const maxOverlap = users.length || 1;
@@ -195,24 +198,20 @@ function draw() {
       const slot = gridToSlot(d, r);
       const c = document.createElement("div");
       c.className = "cell";
+      c.dataset.slot = slot;
 
       let overlap = 0;
       users.forEach(u => {
         if (roomData[u][slot]) overlap++;
       });
 
-      // User color
       if (roomData[username][slot]) {
         c.style.background = color;
       } else {
         c.style.background = heatColor(overlap, maxOverlap);
       }
 
-      // Add data-slot attribute for global drag
-      c.dataset.slot = slot;
-
       grid.appendChild(c);
-      cellRefs.push(c);
     }
   }
 }
