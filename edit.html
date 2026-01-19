@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <title>Edit Availability</title>
 <style>
+/* ---------- General ---------- */
 * { box-sizing: border-box; margin:0; padding:0; font-family: system-ui,sans-serif; }
-body { background: #0f0f14; color:#e6e6eb; }
+body { background:#0f0f14; color:#e6e6eb; }
 header { padding:32px 24px 20px; text-align:center; }
 .header-title { display:inline-flex; align-items:center; gap:14px; }
 .header-title img { height:2.4rem; width:auto; }
@@ -16,11 +17,15 @@ nav a:hover { color:#fff; }
 nav a.active { color:#6aa6ff; }
 main { max-width:1200px; margin:40px auto; padding:0 24px; }
 h2 { font-size:2rem; margin-bottom:16px; }
+
+/* ---------- Availability Header ---------- */
 .availability-header { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px; }
 .availability-header h2 { margin:0; flex:1; }
 #memberSelect { flex:1; max-width:200px; padding:6px 10px; font-size:1rem; border-radius:4px; border:1px solid #2a2a3a; background:#151520; color:#e6e6eb; margin:0 auto; text-align:center; }
 #saveButton { flex:1; max-width:100px; padding:6px 16px; font-size:1rem; background:#6aa6ff; color:white; border:none; border-radius:4px; cursor:pointer; }
 #saveButton:hover { background:#5590e0; }
+
+/* ---------- Grid ---------- */
 .edit-wrapper { display:flex; flex-direction:column; gap:4px; overflow-x:auto; }
 .days-header { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:4px; }
 .days-header div { text-align:center; color:#b9b9cc; font-size:0.9rem; }
@@ -65,7 +70,7 @@ h2 { font-size:2rem; margin-bottom:16px; }
 </main>
 
 <script>
-document.addEventListener("DOMContentLoaded", function(){
+document.addEventListener("DOMContentLoaded", function() {
 
 const hours=24, increments=2, days=7;
 const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -136,6 +141,17 @@ cells.forEach(cell=>{
 });
 document.addEventListener("mouseup",()=>isDragging=false);
 
+// Touch events
+cells.forEach(cell=>{
+  cell.addEventListener("touchstart",e=>{ e.preventDefault(); dragValue=!cell.classList.contains("active"); setCell(cell,dragValue,true); });
+  cell.addEventListener("touchmove",e=>{
+    e.preventDefault();
+    const touch=e.touches[0];
+    const target=document.elementFromPoint(touch.clientX,touch.clientY);
+    if(target && target.classList.contains("edit-cell")) setCell(target,dragValue,true);
+  });
+});
+
 // Dropdown change
 memberSelect.addEventListener("change",()=>{
   const memberId=memberSelect.value;
@@ -153,13 +169,14 @@ memberSelect.addEventListener("change",()=>{
   });
 });
 
-// Save button
+// Save button -> download JSON
 saveButton.addEventListener("click",()=>{
   const memberId=memberSelect.value;
   if(memberId==="member0"){ alert("Cannot save default member"); return; }
 
   const slots=[];
   const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   cells.forEach(c=>{
     if(c.classList.contains("active")){
       const row=parseInt(c.dataset.row);
@@ -173,17 +190,21 @@ saveButton.addEventListener("click",()=>{
       slots.push({time:utc.toISOString(), timezone:tz});
     }
   });
+
   availabilityData[memberId].slots=slots;
 
   const blob=new Blob([JSON.stringify(availabilityData,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
-  a.href=url; a.download="availability.json"; a.click();
+  a.href=url; a.download="availability.json";
+  a.click();
   URL.revokeObjectURL(url);
+
   alert("Availability saved!");
 });
 
 }); // DOMContentLoaded
 </script>
+
 </body>
 </html>
