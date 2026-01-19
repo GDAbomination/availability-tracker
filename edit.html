@@ -3,67 +3,71 @@
 <head>
 <meta charset="UTF-8">
 <title>Edit Availability</title>
-<link rel="stylesheet" href="styles.css">
 <style>
-/* ---------- Page-specific ---------- */
+body {
+  background: #0f0f14;
+  color: #e6e6eb;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  padding: 32px 24px 20px;
+  text-align: center;
+}
+
+.header-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.header-title img {
+  height: 2.4rem;
+  width: auto;
+}
+
+.header-title h1 {
+  font-size: 2.4rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+nav {
+  position: sticky;
+  top: 0;
+  height: 56px;
+  background: #151520;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 1px solid #2a2a3a;
+}
+
+nav a {
+  color: #cfcfe8;
+  text-decoration: none;
+  margin: 0 28px;
+  font-weight: 500;
+}
+
+nav a:hover { color: #fff; }
+
+nav a.active { color: #6aa6ff; }
+
 main {
   max-width: 1200px;
   margin: 40px auto;
   padding: 0 24px;
 }
 
-/* Header row: title + dropdown + save */
-.availability-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  gap: 16px;
-}
+h2 { font-size: 2rem; margin-bottom: 16px; }
 
-.availability-header h2 {
-  margin: 0;
-  flex: 1;
-}
+.edit-wrapper { display: flex; flex-direction: column; gap: 4px; overflow-x: auto; }
 
-#memberSelect {
-  flex: 1;
-  max-width: 200px;
-  text-align: center;
-  padding: 6px 10px;
-  font-size: 1rem;
-  border-radius: 4px;
-  border: 1px solid #2a2a3a;
-  background: #151520;
-  color: #e6e6eb;
-  margin: 0 auto;
-}
-
-#saveButton {
-  flex: 1;
-  max-width: 100px;
-  padding: 6px 16px;
-  font-size: 1rem;
-  background: #6aa6ff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-#saveButton:hover {
-  background: #5590e0;
-}
-
-/* Wrapper for days + grid */
-.edit-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  overflow-x: auto;
-}
-
-/* Days of the week header */
+/* Days header */
 .days-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -102,7 +106,7 @@ main {
   padding-right: 4px;
 }
 
-/* Edit grid */
+/* Grid */
 .edit-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -118,13 +122,8 @@ main {
   transition: background 0.2s;
 }
 
-.edit-cell.active {
-  background: #6aa6ff;
-}
-
-.edit-cell:hover {
-  background: #6666ff;
-}
+.edit-cell.active { background: #6aa6ff; }
+.edit-cell:hover { background: #6666ff; }
 </style>
 </head>
 <body>
@@ -139,76 +138,46 @@ main {
 <nav>
   <a href="index.html">Home</a>
   <a href="members.html">Members</a>
-  <a href="availability.html">Availability</a>
+  <a href="availability.html" class="active">Availability</a>
 </nav>
 
 <main>
-  <div class="availability-header">
-    <h2>Edit Availability</h2>
-    <select id="memberSelect">
-      <option value="member0">select...</option>
-      <option value="member1">Speedix08</option>
-      <option value="member2">GD_Abomination</option>
-      <option value="member3">SimLeek</option>
-      <option value="member4">Flame</option>
-      <option value="member5">Lele</option>
-    </select>
-    <button id="saveButton">Save</button>
-  </div>
-
+  <h2>Edit Availability</h2>
   <div class="edit-wrapper">
     <div class="days-header" id="daysHeader"></div>
     <div class="time-grid-wrapper">
       <div class="time-labels" id="timeLabels"></div>
-      <div class="edit-grid" id="editGrid"></div>
+      <div id="editGrid" class="edit-grid"></div>
     </div>
   </div>
 </main>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.15.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.15.0/firebase-firestore.js";
-
-// Firebase setup
-const firebaseConfig = {
-  apiKey: "AIzaSyADRD-ZSdmtLAChpCJSg2m-eGD8KkZQLAw",
-  authDomain: "echo-frontier.firebaseapp.com",
-  projectId: "echo-frontier",
-  storageBucket: "echo-frontier.firebasestorage.app",
-  messagingSenderId: "483328395754",
-  appId: "1:483328395754:web:8426b8abe728f6fd5e0a93"
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// Grid constants
+<script>
 const hours = 24;
-const increments = 2;
+const increments = 2; // half-hour increments
 const days = 7;
-const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
+const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const timeLabelsEl = document.getElementById("timeLabels");
 const daysHeaderEl = document.getElementById("daysHeader");
 const gridEl = document.getElementById("editGrid");
-const memberSelect = document.getElementById("memberSelect");
-const saveButton = document.getElementById("saveButton");
 const cells = [];
 
-// Build days header
+// Days header
 dayNames.forEach(d => {
   const div = document.createElement("div");
   div.textContent = d;
   daysHeaderEl.appendChild(div);
 });
 
-// Build time labels
-for (let h = 0; h < hours; h++) {
-  for (let i = 0; i < increments; i++) {
-    const label = document.createElement("div");
+// Time labels
+for (let h=0; h<hours; h++){
+  for (let i=0; i<increments; i++){
+    const div = document.createElement("div");
     const date = new Date();
     date.setHours(h, i*30, 0, 0);
-    label.textContent = date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    timeLabelsEl.appendChild(label);
+    div.textContent = date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    timeLabelsEl.appendChild(div);
   }
 }
 
@@ -224,98 +193,42 @@ for (let row=0; row<hours*increments; row++){
   }
 }
 
-// Click / drag logic
+// Click/drag logic
 let isDragging = false;
 let dragValue = true;
-function setCell(cell, value, ignoreMember0=false){
-  if(ignoreMember0 && memberSelect.value==="member0") return;
+
+function setCell(cell, value){
   if(value) cell.classList.add("active");
   else cell.classList.remove("active");
 }
+
+// Mouse
 cells.forEach(cell=>{
   cell.addEventListener("mousedown", e=>{
     e.preventDefault();
     isDragging=true;
     dragValue=!cell.classList.contains("active");
-    setCell(cell, dragValue, true);
+    setCell(cell, dragValue);
   });
   cell.addEventListener("mouseenter", ()=>{
-    if(isDragging) setCell(cell, dragValue, true);
+    if(isDragging) setCell(cell, dragValue);
   });
 });
 document.addEventListener("mouseup", ()=>isDragging=false);
 
-// Touch events
+// Touch
 cells.forEach(cell=>{
   cell.addEventListener("touchstart", e=>{
     e.preventDefault();
     dragValue=!cell.classList.contains("active");
-    setCell(cell, dragValue, true);
+    setCell(cell, dragValue);
   });
   cell.addEventListener("touchmove", e=>{
     e.preventDefault();
     const touch = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
-    if(target && target.classList.contains("edit-cell")) setCell(target, dragValue, true);
+    if(target && target.classList.contains("edit-cell")) setCell(target, dragValue);
   });
-});
-
-// Load default member0
-async function loadAvailability(memberId){
-  cells.forEach(c=>c.classList.remove("active"));
-  if(memberId==="member0") return;
-
-  const docRef = doc(db,"availability",memberId);
-  const docSnap = await getDoc(docRef);
-  if(!docSnap.exists()) return;
-  const slots = docSnap.data().slots || {};
-
-  for(const utcStr in slots){
-    const utcDate = new Date(utcStr);
-    const localDate = new Date(utcDate.getTime()+utcDate.getTimezoneOffset()*60000);
-    const day = localDate.getDay();
-    const hour = localDate.getHours();
-    const minute = localDate.getMinutes();
-    const row = hour*2 + (minute>=30?1:0);
-    const index = row*days + day;
-    if(index>=0 && index<cells.length) cells[index].classList.add("active");
-  }
-}
-
-// Initial load
-await loadAvailability("member0");
-
-// Dropdown change
-memberSelect.addEventListener("change", ()=>loadAvailability(memberSelect.value));
-
-// Save button
-saveButton.addEventListener("click", async ()=>{
-  if(memberSelect.value==="member0") return;
-
-  const availability = {};
-  cells.forEach(cell=>{
-    if(cell.classList.contains("active")){
-      const day = parseInt(cell.dataset.day);
-      const row = parseInt(cell.dataset.row);
-      const hour = Math.floor(row/2);
-      const minute = (row%2)*30;
-      const localDate = new Date();
-      localDate.setHours(hour, minute, 0, 0);
-      const today = new Date();
-      const diff = day-today.getDay();
-      localDate.setDate(localDate.getDate()+diff);
-      const utcDate = new Date(localDate.getTime()-localDate.getTimezoneOffset()*60000);
-      availability[utcDate.toISOString()]=true;
-    }
-  });
-
-  try{
-    await setDoc(doc(db,"availability",memberSelect.value), {slots: availability});
-    window.location.href="availability.html";
-  }catch(e){
-    console.error(e);
-    alert("Error saving availability");
-  }
 });
 </script>
 
