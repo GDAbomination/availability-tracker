@@ -23,7 +23,7 @@ header {
 }
 
 .header-title img {
-  height: 2.4rem; /* matches h1 font-size */
+  height: 2.4rem;
   width: auto;
 }
 
@@ -99,7 +99,6 @@ p {
   height: auto;
   object-fit: contain;
   border-radius: 6px;
-  border: 0px solid #2a2a3a;
   background: #0b0b10;
 }
 
@@ -120,7 +119,6 @@ p {
   max-height: 256px;
   object-fit: contain;
   border-radius: 6px;
-  border: 0px solid #2a2a3a;
   background: #0b0b10;
   margin-bottom: 12px;
 }
@@ -138,7 +136,7 @@ p {
 
 /* ---------- Availability / Edit Page ---------- */
 
-/* Header row with title, dropdown, save button */
+/* Header row: title, dropdown, save button */
 .availability-header {
   display: flex;
   justify-content: space-between;
@@ -149,19 +147,19 @@ p {
 
 .availability-header h2 {
   margin: 0;
-  flex: 1; /* left-aligned */
+  flex: 1;
 }
 
 #memberSelect {
   flex: 1;
   max-width: 200px;
-  text-align: center;
   padding: 6px 10px;
   font-size: 1rem;
   border-radius: 4px;
   border: 1px solid #2a2a3a;
   background: #151520;
   color: #e6e6eb;
+  text-align: center;
   margin: 0 auto;
 }
 
@@ -185,8 +183,8 @@ p {
 .availability-wrapper {
   display: flex;
   align-items: flex-start;
-  overflow-x: auto; /* horizontal scroll */
   gap: 4px;
+  overflow-x: auto;
 }
 
 /* Time labels column */
@@ -198,40 +196,40 @@ p {
 
 .time-labels div {
   height: 20px; /* row height */
+  line-height: 20px;
   font-size: 0.7rem;
   color: #b9b9cc;
   text-align: right;
   padding-right: 4px;
-  line-height: 20px;
 }
 
 /* Days header */
 .days-header {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, 40px); /* same width as cells */
   gap: 2px;
   margin-bottom: 4px;
 }
 
 .days-header div {
   text-align: center;
-  color: #b9b9cc;
   font-size: 0.9rem;
+  color: #b9b9cc;
 }
 
-/* Grid */
+/* Grid container */
 .availability-grid,
 .edit-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr); /* 7 days */
+  grid-template-columns: repeat(7, 40px); /* 7 days */
   gap: 2px;
 }
 
 .availability-cell,
 .edit-cell {
-  width: 100%;      /* fill column width */
-  height: 20px;     /* match time label row height */
-  background: #444454; /* base gray */
+  width: 40px;    /* fill column width */
+  height: 20px;   /* match time label row height */
+  background: #444454;
   border-radius: 2px;
   cursor: pointer;
   transition: background 0.2s;
@@ -242,7 +240,6 @@ p {
   background: #6aa6ff;
 }
 
-/* Hover highlight for edit page */
 .edit-cell:hover {
   background: #6666ff;
 }
