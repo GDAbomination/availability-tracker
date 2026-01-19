@@ -1,20 +1,31 @@
 {
   "member0": {
+    "displayName": "Default",
     "slots": []
   },
   "member1": {
-    "slots": []
+    "displayName": "Speedix08",
+    "slots": [],
+    "timezone": "Australia/Melbourne"
   },
   "member2": {
-    "slots": []
+    "displayName": "GD_Abomination",
+    "slots": [],
+    "timezone": "America/Phoenix"
   },
   "member3": {
-    "slots": []
+    "displayName": "SimLeek",
+    "slots": [],
+    "timezone": "America/Phoenix"
   },
   "member4": {
-    "slots": []
+    "displayName": "Flame",
+    "slots": [],
+    "timezone": "Australia/Melbourne"
   },
   "member5": {
-    "slots": []
+    "displayName": "Lele",
+    "slots": [],
+    "timezone": "America/Detroit"
   }
 }
