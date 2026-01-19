@@ -5,7 +5,7 @@
 <title>Edit Availability</title>
 <style>
 * { box-sizing: border-box; margin:0; padding:0; font-family: system-ui,sans-serif; }
-body { background:#0f0f14; color:#e6e6eb; }
+body { background: #0f0f14; color:#e6e6eb; }
 header { padding:32px 24px 20px; text-align:center; }
 .header-title { display:inline-flex; align-items:center; gap:14px; }
 .header-title img { height:2.4rem; width:auto; }
@@ -76,7 +76,7 @@ const memberSelect=document.getElementById("memberSelect");
 const saveButton=document.getElementById("saveButton");
 const cells=[];
 
-// Sample JSON data
+// Sample JSON
 let availabilityData={
   "member0": { "displayName":"Default","slots":[] },
   "member1": { "displayName":"Speedix08","slots":[],"timezone":"Australia/Melbourne" },
@@ -111,7 +111,7 @@ for(let h=0; h<hours; h++){
   }
 }
 
-// Build grid
+// Build 7x48 grid
 for(let row=0; row<hours*increments; row++){
   for(let day=0; day<days; day++){
     const cell=document.createElement("div");
@@ -136,17 +136,6 @@ cells.forEach(cell=>{
 });
 document.addEventListener("mouseup",()=>isDragging=false);
 
-// Touch events
-cells.forEach(cell=>{
-  cell.addEventListener("touchstart",e=>{ e.preventDefault(); dragValue=!cell.classList.contains("active"); setCell(cell,dragValue,true); });
-  cell.addEventListener("touchmove",e=>{
-    e.preventDefault();
-    const touch=e.touches[0];
-    const target=document.elementFromPoint(touch.clientX,touch.clientY);
-    if(target && target.classList.contains("edit-cell")) setCell(target,dragValue,true);
-  });
-});
-
 // Dropdown change
 memberSelect.addEventListener("change",()=>{
   const memberId=memberSelect.value;
@@ -164,8 +153,15 @@ memberSelect.addEventListener("change",()=>{
   });
 });
 
-// Save button
-saveButton.addEventListener("click",()=>{
+// -------- GitHub API Config --------
+const GITHUB_TOKEN = "YOUR_PERSONAL_ACCESS_TOKEN";
+const REPO_OWNER = "YOUR_USERNAME";
+const REPO_NAME = "YOUR_REPO";
+const FILE_PATH = "availability.json";
+const BRANCH = "main";
+
+// Save button pushes to GitHub
+saveButton.addEventListener("click", async ()=>{
   const memberId=memberSelect.value;
   if(memberId==="member0"){ alert("Cannot save default member"); return; }
 
@@ -187,9 +183,42 @@ saveButton.addEventListener("click",()=>{
   });
 
   availabilityData[memberId].slots=slots;
-  alert("Availability saved locally!");
-});
 
+  try{
+    // Get current file SHA
+    const getResp=await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}?ref=${BRANCH}`,{
+      headers:{Authorization:`token ${GITHUB_TOKEN}`}
+    });
+    const data=await getResp.json();
+    const sha=data.sha;
+
+    // Push updated file
+    const putResp=await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`,{
+      method:"PUT",
+      headers:{
+        Authorization:`token ${GITHUB_TOKEN}`,
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        message:`Update availability by ${memberId}`,
+        content:btoa(JSON.stringify(availabilityData,null,2)),
+        sha:sha,
+        branch:BRANCH
+      })
+    });
+    if(putResp.ok){
+      alert("Availability saved to GitHub!");
+      memberSelect.dispatchEvent(new Event('change')); // reload grid
+    }else{
+      const err=await putResp.json();
+      console.error(err);
+      alert("Error saving to GitHub");
+    }
+  }catch(e){
+    console.error(e);
+    alert("GitHub push failed");
+  }
+});
 }); // DOMContentLoaded
 </script>
 
