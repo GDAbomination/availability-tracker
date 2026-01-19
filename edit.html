@@ -4,33 +4,33 @@
 <meta charset="UTF-8">
 <title>Edit Availability</title>
 <style>
-* { box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif;}
-body { background:#0f0f14;color:#e6e6eb;}
-header { padding:32px 24px 20px;text-align:center;}
-.header-title { display:inline-flex;align-items:center;gap:14px;}
-.header-title img { height:2.4rem;width:auto;}
-.header-title h1 { font-size:2.4rem;font-weight:600;letter-spacing:0.05em;}
-nav { position:sticky;top:0;height:56px;background:#151520;display:flex;justify-content:center;align-items:center;border-bottom:1px solid #2a2a3a;}
-nav a { color:#cfcfe8;text-decoration:none;margin:0 28px;font-weight:500;}
-nav a:hover { color:#fff;}
-nav a.active { color:#6aa6ff;}
-main { max-width:1200px;margin:40px auto;padding:0 24px;}
-h2 { font-size:2rem;margin-bottom:16px;}
-.availability-header { display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px;}
-.availability-header h2 { margin:0;flex:1;}
+* { box-sizing: border-box; margin:0; padding:0; font-family: system-ui,sans-serif; }
+body { background: #0f0f14; color:#e6e6eb; }
+header { padding:32px 24px 20px; text-align:center; }
+.header-title { display:inline-flex; align-items:center; gap:14px; }
+.header-title img { height:2.4rem; width:auto; }
+.header-title h1 { font-size:2.4rem; font-weight:600; letter-spacing:0.05em; }
+nav { position:sticky; top:0; height:56px; background:#151520; display:flex; justify-content:center; align-items:center; border-bottom:1px solid #2a2a3a; }
+nav a { color:#cfcfe8; text-decoration:none; margin:0 28px; font-weight:500; }
+nav a:hover { color:#fff; }
+nav a.active { color:#6aa6ff; }
+main { max-width:1200px; margin:40px auto; padding:0 24px; }
+h2 { font-size:2rem; margin-bottom:16px; }
+.availability-header { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px; }
+.availability-header h2 { margin:0; flex:1; }
 #memberSelect { flex:1; max-width:200px; padding:6px 10px; font-size:1rem; border-radius:4px; border:1px solid #2a2a3a; background:#151520; color:#e6e6eb; margin:0 auto; text-align:center; }
-#saveButton { flex:1; max-width:100px; padding:6px 16px; font-size:1rem; background:#6aa6ff; color:white; border:none; border-radius:4px; cursor:pointer;}
-#saveButton:hover { background:#5590e0;}
-.edit-wrapper { display:flex; flex-direction:column; gap:4px; overflow-x:auto;}
-.days-header { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:4px;}
-.days-header div { text-align:center; color:#b9b9cc; font-size:0.9rem;}
-.time-grid-wrapper { display:grid; grid-template-columns:auto 1fr; gap:4px; align-items:start; overflow-x:auto;}
-.time-labels { display:flex; flex-direction:column; flex-shrink:0;}
-.time-labels div { height:22px; line-height:20px; font-size:0.7rem; color:#b9b9cc; text-align:right; padding-right:4px;}
-.edit-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px;}
-.edit-cell { width:100%; height:20px; background:#444454; border-radius:2px; cursor:pointer; transition:background 0.2s;}
-.edit-cell.active { background:#6aa6ff;}
-.edit-cell:hover { background:#6666ff;}
+#saveButton { flex:1; max-width:100px; padding:6px 16px; font-size:1rem; background:#6aa6ff; color:white; border:none; border-radius:4px; cursor:pointer; }
+#saveButton:hover { background:#5590e0; }
+.edit-wrapper { display:flex; flex-direction:column; gap:4px; overflow-x:auto; }
+.days-header { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:4px; }
+.days-header div { text-align:center; color:#b9b9cc; font-size:0.9rem; }
+.time-grid-wrapper { display:grid; grid-template-columns:auto 1fr; gap:4px; align-items:start; overflow-x:auto; }
+.time-labels { display:flex; flex-direction:column; flex-shrink:0; }
+.time-labels div { height:22px; line-height:20px; font-size:0.7rem; color:#b9b9cc; text-align:right; padding-right:4px; }
+.edit-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.edit-cell { width:100%; height:20px; background:#444454; border-radius:2px; cursor:pointer; transition:background 0.2s; }
+.edit-cell.active { background:#6aa6ff; }
+.edit-cell:hover { background:#6666ff; }
 </style>
 </head>
 <body>
@@ -67,128 +67,133 @@ h2 { font-size:2rem;margin-bottom:16px;}
 <script>
 document.addEventListener("DOMContentLoaded", function(){
 
-const hours=24, increments=2, days=7;
-const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-const timeLabelsEl=document.getElementById("timeLabels");
-const daysHeaderEl=document.getElementById("daysHeader");
-const gridEl=document.getElementById("editGrid");
-const memberSelect=document.getElementById("memberSelect");
-const saveButton=document.getElementById("saveButton");
-const cells=[];
+  const hours = 24, increments = 2, days = 7;
+  const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const timeLabelsEl = document.getElementById("timeLabels");
+  const daysHeaderEl = document.getElementById("daysHeader");
+  const gridEl = document.getElementById("editGrid");
+  const memberSelect = document.getElementById("memberSelect");
+  const saveButton = document.getElementById("saveButton");
+  const cells = [];
 
-// Sample JSON
-let availabilityData={
-  "member0": { "displayName":"Default","slots":[] },
-  "member1": { "displayName":"Speedix08","slots":[],"timezone":"Australia/Melbourne" },
-  "member2": { "displayName":"GD_Abomination","slots":[],"timezone":"America/Phoenix" },
-  "member3": { "displayName":"SimLeek","slots":[],"timezone":"America/Phoenix" },
-  "member4": { "displayName":"Flame","slots":[],"timezone":"Australia/Melbourne" },
-  "member5": { "displayName":"Lele","slots":[],"timezone":"America/Detroit" }
-};
+  // Sample JSON data
+  let availabilityData = {
+    "member0": { "displayName":"Default","slots":[] },
+    "member1": { "displayName":"Speedix08","slots":[],"timezone":"Australia/Melbourne" },
+    "member2": { "displayName":"GD_Abomination","slots":[],"timezone":"America/Phoenix" },
+    "member3": { "displayName":"SimLeek","slots":[],"timezone":"America/Phoenix" },
+    "member4": { "displayName":"Flame","slots":[],"timezone":"Australia/Melbourne" },
+    "member5": { "displayName":"Lele","slots":[],"timezone":"America/Detroit" }
+  };
 
-// Populate dropdown
-for(const id in availabilityData){
-  const opt=document.createElement("option");
-  opt.value=id;
-  opt.textContent=availabilityData[id].displayName;
-  memberSelect.appendChild(opt);
-}
-
-// Days header
-for(let d=0; d<days; d++){
-  const div=document.createElement("div");
-  div.textContent=dayNames[d];
-  daysHeaderEl.appendChild(div);
-}
-
-// Time labels
-for(let h=0; h<hours; h++){
-  for(let i=0;i<increments;i++){
-    const div=document.createElement("div");
-    const date=new Date(); date.setHours(h,i*30,0,0);
-    div.textContent=date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-    timeLabelsEl.appendChild(div);
+  // Populate dropdown
+  for(const id in availabilityData){
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = availabilityData[id].displayName;
+    memberSelect.appendChild(opt);
   }
-}
 
-// Build 7x48 grid
-for(let row=0; row<hours*increments; row++){
-  for(let day=0; day<days; day++){
-    const cell=document.createElement("div");
-    cell.classList.add("edit-cell");
-    cell.dataset.day=day;
-    cell.dataset.row=row;
-    gridEl.appendChild(cell);
-    cells.push(cell);
+  // Days header
+  for(let d=0; d<days; d++){
+    const div = document.createElement("div");
+    div.textContent = dayNames[d];
+    daysHeaderEl.appendChild(div);
   }
-}
 
-// Click + drag
-let isDragging=false, dragValue=true;
-function setCell(cell,value,ignoreMember0=false){
-  if(ignoreMember0 && memberSelect.value==="member0") return;
-  if(value) cell.classList.add("active");
-  else cell.classList.remove("active");
-}
-cells.forEach(cell=>{
-  cell.addEventListener("mousedown",e=>{ e.preventDefault(); isDragging=true; dragValue=!cell.classList.contains("active"); setCell(cell,dragValue,true); });
-  cell.addEventListener("mouseenter",()=>{ if(isDragging) setCell(cell,dragValue,true); });
-});
-document.addEventListener("mouseup",()=>isDragging=false);
+  // Time labels
+  for(let h=0; h<hours; h++){
+    for(let i=0;i<increments;i++){
+      const div = document.createElement("div");
+      const date = new Date(); date.setHours(h,i*30,0,0);
+      div.textContent = date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      timeLabelsEl.appendChild(div);
+    }
+  }
 
-// Dropdown change
-memberSelect.addEventListener("change",()=>{
-  const memberId=memberSelect.value;
-  cells.forEach(c=>c.classList.remove("active"));
-  if(memberId==="member0") return;
-  const slots=availabilityData[memberId].slots||[];
-  slots.forEach(slot=>{
-    const utc=new Date(slot.time);
-    const tzOffset=new Date().getTimezoneOffset()*60000;
-    const local=new Date(utc.getTime()-tzOffset);
-    const day=local.getDay();
-    const row=local.getHours()*2 + (local.getMinutes()>=30?1:0);
-    const index=row*7 + day;
-    if(index>=0 && index<cells.length) cells[index].classList.add("active");
+  // Build 7x48 grid
+  for(let row=0; row<hours*increments; row++){
+    for(let day=0; day<days; day++){
+      const cell = document.createElement("div");
+      cell.classList.add("edit-cell");
+      cell.dataset.day = day;
+      cell.dataset.row = row;
+      gridEl.appendChild(cell);
+      cells.push(cell);
+    }
+  }
+
+  // Click + drag logic
+  let isDragging = false, dragValue = true;
+  function setCell(cell,value,ignoreMember0=false){
+    if(ignoreMember0 && memberSelect.value==="member0") return;
+    if(value) cell.classList.add("active");
+    else cell.classList.remove("active");
+  }
+  cells.forEach(cell=>{
+    cell.addEventListener("mousedown",e=>{
+      e.preventDefault();
+      isDragging=true;
+      dragValue=!cell.classList.contains("active");
+      setCell(cell,dragValue,true);
+    });
+    cell.addEventListener("mouseenter",()=>{ if(isDragging) setCell(cell,dragValue,true); });
   });
-});
+  document.addEventListener("mouseup",()=>isDragging=false);
 
-// Save button using Netlify function
-saveButton.addEventListener("click",async ()=>{
-  const memberId=memberSelect.value;
-  if(memberId==="member0"){ alert("Cannot save default member"); return; }
+  // Member select change
+  memberSelect.addEventListener("change",()=>{
+    const memberId = memberSelect.value;
+    cells.forEach(c=>c.classList.remove("active"));
+    if(memberId === "member0") return;
+    const slots = availabilityData[memberId].slots || [];
+    slots.forEach(slot=>{
+      const utc = new Date(slot.time);
+      const tzOffset = new Date().getTimezoneOffset()*60000;
+      const local = new Date(utc.getTime()-tzOffset);
+      const day = local.getDay();
+      const row = local.getHours()*2 + (local.getMinutes()>=30?1:0);
+      const index = row*7 + day;
+      if(index>=0 && index<cells.length) cells[index].classList.add("active");
+    });
+  });
 
-  const slots=[];
-  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
-  cells.forEach(c=>{
-    if(c.classList.contains("active")){
-      const row=parseInt(c.dataset.row);
-      const day=parseInt(c.dataset.day);
-      const hour=Math.floor(row/2);
-      const minute=(row%2)*30;
-      const d=new Date();
-      d.setHours(hour,minute,0,0);
-      d.setDate(d.getDate() - d.getDay() + day);
-      const utc=new Date(d.getTime() + d.getTimezoneOffset()*60000);
-      slots.push({time:utc.toISOString(), timezone:tz});
+  // Save button → call Netlify function
+  saveButton.addEventListener("click", async ()=>{
+    const memberId = memberSelect.value;
+    if(memberId==="member0"){ alert("Cannot save default member"); return; }
+
+    const slots = [];
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    cells.forEach(c=>{
+      if(c.classList.contains("active")){
+        const row = parseInt(c.dataset.row);
+        const day = parseInt(c.dataset.day);
+        const hour = Math.floor(row/2);
+        const minute = (row%2)*30;
+        const d = new Date();
+        d.setHours(hour,minute,0,0);
+        d.setDate(d.getDate() - d.getDay() + day);
+        const utc = new Date(d.getTime() + d.getTimezoneOffset()*60000);
+        slots.push({time:utc.toISOString(), timezone:tz});
+      }
+    });
+    availabilityData[memberId].slots = slots;
+
+    try{
+      const resp = await fetch("/.netlify/functions/saveAvailability", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ availabilityData, memberId })
+      });
+      const result = await resp.json();
+      console.log(result);
+      alert("Availability saved to GitHub!");
+    }catch(e){
+      console.error("Error saving:", e);
+      alert("Error saving availability.");
     }
   });
-  availabilityData[memberId].slots=slots;
-
-  try {
-    const response = await fetch("/.netlify/functions/saveAvailability",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ availabilityData, memberId })
-    });
-    const result = await response.json();
-    if(response.ok) alert("Availability saved to GitHub!");
-    else alert("Error saving: "+(result.error||"Unknown"));
-  } catch(err){
-    console.error(err);
-    alert("Error saving: "+err.message);
-  }
-});
 
 });
 </script>
