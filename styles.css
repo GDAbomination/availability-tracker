@@ -202,3 +202,28 @@ p {
   background: #444454; /* base gray */
   border-radius: 2px;
 }
+
+.availability-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.availability-header h2 {
+  margin: 0;
+}
+
+#saveButton {
+  padding: 6px 16px;
+  font-size: 1rem;
+  background: #6aa6ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#saveButton:hover {
+  background: #5590e0;
+}
