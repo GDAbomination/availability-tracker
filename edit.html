@@ -166,18 +166,13 @@ cells.forEach(cell => {
   cell.addEventListener("mousedown", (e) => {
     e.preventDefault(); // prevent text selection
     isDragging = true;
-    dragValue = !cell.classList.contains("active"); // toggle value
-    toggleCell(cell, dragValue);
+    dragValue = !cell.classList.contains("active"); // determine desired state
+    setCell(cell, dragValue);
   });
 
   // Mouse enter: apply drag if dragging
   cell.addEventListener("mouseenter", () => {
-    if (isDragging) toggleCell(cell, dragValue);
-  });
-
-  // Optional: click also toggles on its own
-  cell.addEventListener("click", () => {
-    toggleCell(cell, !cell.classList.contains("active"));
+    if (isDragging) setCell(cell, dragValue);
   });
 });
 
@@ -186,8 +181,8 @@ document.addEventListener("mouseup", () => {
   isDragging = false;
 });
 
-// --- Toggle cell state ---
-function toggleCell(cell, value) {
+// --- Set cell state ---
+function setCell(cell, value) {
   if (value) {
     cell.classList.add("active");
   } else {
