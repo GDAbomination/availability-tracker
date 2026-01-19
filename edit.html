@@ -116,7 +116,6 @@ h2 {
   </div>
 </main>
 
-
 <script>
 const hours = 24;
 const increments = 2; // half-hour increments
@@ -153,15 +152,49 @@ for (let row=0; row<hours*increments; row++) {
     cell.classList.add("edit-cell");
     cell.dataset.day = day;
     cell.dataset.row = row;
-    cell.addEventListener("click", () => {
-      cell.classList.toggle("active");
-    });
     gridEl.appendChild(cell);
     cells.push(cell);
+  }
+}
+
+// --- Click + Drag Selection Logic ---
+let isDragging = false;
+let dragValue = true; // whether we're turning cells on or off
+
+cells.forEach(cell => {
+  // Mouse down: start drag
+  cell.addEventListener("mousedown", (e) => {
+    e.preventDefault(); // prevent text selection
+    isDragging = true;
+    dragValue = !cell.classList.contains("active"); // toggle value
+    toggleCell(cell, dragValue);
+  });
+
+  // Mouse enter: apply drag if dragging
+  cell.addEventListener("mouseenter", () => {
+    if (isDragging) toggleCell(cell, dragValue);
+  });
+
+  // Optional: click also toggles on its own
+  cell.addEventListener("click", () => {
+    toggleCell(cell, !cell.classList.contains("active"));
+  });
+});
+
+// Stop dragging on mouse up anywhere
+document.addEventListener("mouseup", () => {
+  isDragging = false;
+});
+
+// --- Toggle cell state ---
+function toggleCell(cell, value) {
+  if (value) {
+    cell.classList.add("active");
+  } else {
+    cell.classList.remove("active");
   }
 }
 </script>
 
 </body>
 </html>
-
