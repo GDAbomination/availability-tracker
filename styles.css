@@ -120,7 +120,7 @@ p {
   max-height: 256px;
   object-fit: contain;
   border-radius: 6px;
-  border: 1px solid #2a2a3a;
+  border: 0px solid #2a2a3a;
   background: #0b0b10;
   margin-bottom: 12px;
 }
