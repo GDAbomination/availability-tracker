@@ -16,7 +16,6 @@ header {
   text-align: center;
 }
 
-/* Flex container for icon + name */
 .header-title {
   display: inline-flex;
   align-items: center;
@@ -137,21 +136,38 @@ p {
   margin-top: 4px;
 }
 
-/* ---------- Availability Page ---------- */
+/* ---------- Availability / Edit Page ---------- */
 
-/* Header row with inline edit button */
+/* Header row with title, dropdown, save button */
 .availability-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  gap: 16px;
 }
 
 .availability-header h2 {
   margin: 0;
+  flex: 1; /* left-aligned */
 }
 
-#editButton {
+#memberSelect {
+  flex: 1;
+  max-width: 200px;
+  text-align: center;
+  padding: 6px 10px;
+  font-size: 1rem;
+  border-radius: 4px;
+  border: 1px solid #2a2a3a;
+  background: #151520;
+  color: #e6e6eb;
+  margin: 0 auto;
+}
+
+#saveButton {
+  flex: 1;
+  max-width: 100px;
   padding: 6px 16px;
   font-size: 1rem;
   background: #6aa6ff;
@@ -161,15 +177,15 @@ p {
   cursor: pointer;
 }
 
-#editButton:hover {
+#saveButton:hover {
   background: #5590e0;
 }
 
-/* Wrapper with time labels and grid */
+/* Wrapper for time labels + grid */
 .availability-wrapper {
   display: flex;
   align-items: flex-start;
-  overflow-x: auto; /* horizontal scroll on small screens */
+  overflow-x: auto; /* horizontal scroll */
   gap: 4px;
 }
 
@@ -189,41 +205,44 @@ p {
   line-height: 20px;
 }
 
-/* Availability grid */
-.availability-grid {
+/* Days header */
+.days-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.days-header div {
+  text-align: center;
+  color: #b9b9cc;
+  font-size: 0.9rem;
+}
+
+/* Grid */
+.availability-grid,
+.edit-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr); /* 7 days */
   gap: 2px;
 }
 
-.availability-cell {
-  width: 20px;   /* fixed square width */
-  height: 20px;  /* matches label row height */
+.availability-cell,
+.edit-cell {
+  width: 100%;      /* fill column width */
+  height: 20px;     /* match time label row height */
   background: #444454; /* base gray */
   border-radius: 2px;
-}
-
-.availability-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.availability-header h2 {
-  margin: 0;
-}
-
-#saveButton {
-  padding: 6px 16px;
-  font-size: 1rem;
-  background: #6aa6ff;
-  color: white;
-  border: none;
-  border-radius: 4px;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
-#saveButton:hover {
-  background: #5590e0;
+.availability-cell.active,
+.edit-cell.active {
+  background: #6aa6ff;
+}
+
+/* Hover highlight for edit page */
+.edit-cell:hover {
+  background: #6666ff;
 }
