@@ -143,26 +143,61 @@ function populateGrid(slots){
 }
 
 // --- Handle dropdown ---
-memberSelect.addEventListener("change",()=>{
-  const val=memberSelect.value;
-  if(val==="member0"){ cells.forEach(c=>c.classList.remove("active")); return; }
-  populateGrid(availabilityData[val].slots||[]);
+memberSelect.addEventListener("change", () => {
+  const memberId = memberSelect.value;
+  if(memberId==="member0"){ 
+    cells.forEach(c=>c.classList.remove("active")); 
+    return; 
+  }
+
+  const member = availabilityData[memberId];
+  const slots = member.slots || [];
+  cells.forEach(c=>c.classList.remove("active"));
+
+  slots.forEach(slot=>{
+    // Convert slot.time from slot.timezone to browser local time
+    const utc = new Date(slot.time);
+    const tzOffset = new Date().getTimezoneOffset()*60000; // local offset in ms
+    const local = new Date(utc.getTime() - tzOffset);
+    const day = local.getDay();
+    const row = local.getHours()*2 + (local.getMinutes()>=30?1:0);
+    const index = row*7 + day;
+    if(index>=0 && index<cells.length) cells[index].classList.add("active");
+  });
 });
 
-// --- Handle Save ---
-saveButton.addEventListener("click",()=>{
-  const member=memberSelect.value;
-  if(member==="member0"){ alert("Cannot save default member"); return; }
+// --- Save button ---
+saveButton.addEventListener("click", ()=>{
+  const memberId = memberSelect.value;
+  if(memberId==="member0"){ alert("Cannot save default member"); return; }
 
-  const slots=[];
+  const slots = [];
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   cells.forEach(c=>{
     if(c.classList.contains("active")){
-      const row=parseInt(c.dataset.row), day=parseInt(c.dataset.day);
-      const hour=Math.floor(row/2), minute=(row%2)*30;
-      const d=new Date(); d.setHours(hour,minute,0,0); d.setDate(d.getDate()-d.getDay()+day);
-      slots.push(new Date(d.getTime()+d.getTimezoneOffset()*60000).toISOString()); // convert local->UTC
+      const row = parseInt(c.dataset.row);
+      const day = parseInt(c.dataset.day);
+      const hour = Math.floor(row/2);
+      const minute = (row%2)*30;
+      const d = new Date();
+      d.setHours(hour, minute, 0, 0);
+      d.setDate(d.getDate() - d.getDay() + day); // align to proper day
+      const utc = new Date(d.getTime() + d.getTimezoneOffset()*60000);
+      slots.push({time: utc.toISOString(), timezone: tz});
     }
   });
+
+  availabilityData[memberId].slots = slots;
+
+  // Download updated JSON
+  const blob = new Blob([JSON.stringify(availabilityData,null,2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download="availability.json"; a.click();
+  URL.revokeObjectURL(url);
+  alert("Availability saved!");
+});
 
   // Update in-memory JSON
   availabilityData[member].slots=slots;
