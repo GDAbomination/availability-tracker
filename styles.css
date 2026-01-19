@@ -10,11 +10,10 @@ body {
   color: #e6e6eb;
 }
 
-/* ---------- Header (Logo + Studio Name) ---------- */
+/* ---------- Studio Header ---------- */
 header {
-  padding: 32px 24px 16px;
+  padding: 32px 24px 20px;
   text-align: center;
-  background: #0f0f14;
 }
 
 header img {
@@ -25,32 +24,25 @@ header img {
 header h1 {
   font-size: 2.4rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 /* ---------- Navigation Bar ---------- */
 nav {
   position: sticky;
   top: 0;
+  height: 56px;
   background: #151520;
-  border-bottom: 1px solid #2a2a3a;
-}
-
-nav ul {
-  list-style: none;
   display: flex;
   justify-content: center;
-  height: 56px;
   align-items: center;
-}
-
-nav li {
-  margin: 0 24px;
+  border-bottom: 1px solid #2a2a3a;
 }
 
 nav a {
   color: #cfcfe8;
   text-decoration: none;
+  margin: 0 28px;
   font-weight: 500;
   font-size: 1rem;
 }
@@ -70,7 +62,7 @@ main {
   padding: 0 24px;
 }
 
-main h2 {
+h2 {
   font-size: 2rem;
   margin-bottom: 16px;
 }
