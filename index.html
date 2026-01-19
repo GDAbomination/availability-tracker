@@ -1,218 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Team Availability</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<style>
-body {
-  font-family: system-ui, sans-serif;
-  background: #0c0c0c;
-  color: #eee;
-  padding: 16px;
-}
-
-h1 { text-align: center; }
-
-.controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: 70px repeat(7, 1fr);
-  gap: 1px;
-}
-
-.header, .time {
-  background: #151515;
-  padding: 4px;
-  font-size: 12px;
-}
-
-.header {
-  text-align: center;
-  font-weight: bold;
-}
-
-.time {
-  text-align: right;
-}
-
-.cell {
-  background: #1e1e1e;
-  height: 22px;
-  cursor: pointer;
-  user-select: none;
-}
-</style>
+  <meta charset="UTF-8">
+  <title>Home</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
 
-<h1>Team Availability</h1>
+<nav>
+  <a href="index.html" class="active">Home</a>
+  <a href="members.html">Members</a>
+  <a href="availability.html">Availability</a>
+</nav>
 
-<div class="controls">
-  <div id="userInfo"></div>
-  <div>
-    Share:
-    <input id="shareLink" size="28" readonly>
-  </div>
-</div>
-
-<div class="grid" id="grid"></div>
-
-<script>
-/* ---------- CONSTANTS ---------- */
-const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-const ROWS = 48;
-const MS_PER_SLOT = 30 * 60 * 1000;
-
-/* ---------- ROOM ---------- */
-const params = new URLSearchParams(location.search);
-let room = params.get("room");
-if (!room) {
-  room = Math.random().toString(36).slice(2,8);
-  params.set("room", room);
-  history.replaceState(null,"","?"+params.toString());
-}
-document.getElementById("shareLink").value = location.href;
-
-/* ---------- USER ---------- */
-let username = localStorage.getItem("username");
-if (!username) {
-  username = prompt("Enter your name");
-  localStorage.setItem("username", username);
-}
-
-// Rich deep blue for user
-const color = "#001F4D"; 
-document.getElementById("userInfo").textContent = username;
-
-/* ---------- STORAGE ---------- */
-const roomKey = "room_"+room;
-let roomData = JSON.parse(localStorage.getItem(roomKey)) || {};
-if (!roomData[username]) roomData[username] = {};
-
-function save() {
-  localStorage.setItem(roomKey, JSON.stringify(roomData));
-}
-
-/* ---------- GRID ANCHOR ---------- */
-// Reference UTC midnight for storing slots
-const anchorUTC = new Date();
-anchorUTC.setUTCHours(0,0,0,0);
-const anchorTime = anchorUTC.getTime();
-
-/* ---------- GRID MAPPING ---------- */
-function utcSlotForRow(day,row) {
-  return anchorTime + (day * ROWS + row) * MS_PER_SLOT;
-}
-
-// Convert UTC slot to local row index for the viewer
-function localRowIndex(utcSlot) {
-  const offsetMs = new Date().getTimezoneOffset() * 60 * 1000; // local offset in ms
-  const localTime = utcSlot - offsetMs;
-  return Math.floor((localTime - anchorTime)/MS_PER_SLOT) % ROWS;
-}
-
-function rowLabel(row) {
-  const d = new Date(anchorTime + row * MS_PER_SLOT);
-  return d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
-}
-
-/* ---------- GRID ---------- */
-const grid = document.getElementById("grid");
-let isDragging = false;
-let dragValue = true;
-
-// Headers
-grid.appendChild(document.createElement("div"));
-DAYS.forEach(d => {
-  const h = document.createElement("div");
-  h.textContent = d;
-  h.className = "header";
-  grid.appendChild(h);
-});
-
-// Heatmap gradient: gray → deep blue
-function heatColor(count, max) {
-  if (count === 0) return "#1e1e1e";
-  const t = count/max;
-  const r = Math.round(50*(1-t) + 0*t);
-  const g = Math.round(50*(1-t) + 51*t);
-  const b = Math.round(50*(1-t) + 77*t);
-  return `rgb(${r},${g},${b})`;
-}
-
-function draw() {
-  grid.querySelectorAll(".time,.cell").forEach(e=>e.remove());
-
-  const users = Object.keys(roomData);
-  const maxOverlap = users.length || 1;
-
-  for (let r=0; r<ROWS; r++) {
-    const t = document.createElement("div");
-    t.className = "time";
-    t.textContent = rowLabel(r);
-    grid.appendChild(t);
-
-    for (let d=0; d<7; d++) {
-      const slotUTC = utcSlotForRow(d,r);
-      const c = document.createElement("div");
-      c.className = "cell";
-      c.dataset.slot = slotUTC;
-
-      // Count overlaps shifted for viewer
-      let overlap = 0;
-      users.forEach(u=>{
-        Object.keys(roomData[u] || {}).forEach(s=>{
-          const localRow = localRowIndex(Number(s));
-          const localCol = Math.floor((Number(s) - anchorTime)/MS_PER_SLOT/ROWS) % 7;
-          if(localRow===r && localCol===d) overlap++;
-        });
-      });
-
-      // Determine background color
-      const isUserCell = roomData[username][slotUTC];
-      if (isUserCell) c.style.background = color;
-      else c.style.background = heatColor(overlap,maxOverlap);
-
-      grid.appendChild(c);
-    }
-  }
-}
-
-/* ---------- DRAG HANDLING ---------- */
-grid.addEventListener("mousedown", e=>{
-  if(!e.target.classList.contains("cell")) return;
-  isDragging = true;
-  dragValue = !roomData[username][e.target.dataset.slot];
-  roomData[username][e.target.dataset.slot] = dragValue;
-  save();
-  draw();
-});
-
-document.addEventListener("mousemove", e=>{
-  if(!isDragging) return;
-  const target = e.target;
-  if(!target.classList.contains("cell")) return;
-  const slot = target.dataset.slot;
-  roomData[username][slot] = dragValue;
-  save();
-  draw();
-});
-
-document.addEventListener("mouseup", ()=>{isDragging=false;});
-
-/* ---------- INIT ---------- */
-draw();
-</script>
+<main>
+  <h1>Home</h1>
+  <p>
+    This is the home page. Use this area for a studio overview, news, or
+    general information.
+  </p>
+</main>
 
 </body>
 </html>
