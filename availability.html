@@ -1,70 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Availability</title>
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    main {
-      max-width: 1200px;
-      margin: 40px auto;
-      padding: 0 24px;
-    }
+<meta charset="UTF-8">
+<title>Availability</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+main {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 24px;
+}
 
-    h2 {
-      font-size: 2rem;
-      margin-bottom: 24px;
-    }
+h2 {
+  font-size: 2rem;
+  margin-bottom: 24px;
+}
 
-    /* Grid */
-    .availability-grid {
-      display: grid;
-      grid-template-columns: repeat(24, 1fr); /* 24 hours */
-      gap: 2px;
-    }
+/* Edit button */
+#editButton {
+  margin-bottom: 16px;
+  padding: 8px 16px;
+  font-size: 1rem;
+  background: #6aa6ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
 
-    .availability-cell {
-      width: 100%;
-      padding-top: 100%; /* square */
-      position: relative;
-      background: #1a1a2e;
-      border: 1px solid #2a2a3a;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+#editButton:hover {
+  background: #5590e0;
+}
 
-    .availability-cell.available {
-      background: #6aa6ff;
-    }
+/* Grid container */
+.availability-wrapper {
+  display: flex;
+}
 
-    .availability-cell.other {
-      background: #ff6a6a;
-    }
+/* Time labels column */
+.time-labels {
+  display: flex;
+  flex-direction: column;
+  margin-right: 4px;
+}
 
-    /* Inner content to handle click overlay */
-    .availability-cell span {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 0.7rem;
-      color: #e6e6eb;
-    }
+.time-labels div {
+  height: 20px; /* row height */
+  font-size: 0.7rem;
+  color: #b9b9cc;
+  text-align: right;
+  padding-right: 4px;
+  line-height: 20px;
+}
 
-    /* Optional: day labels */
-    .day-labels {
-      display: flex;
-      margin-bottom: 8px;
-      justify-content: space-between;
-    }
+/* Grid */
+.availability-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr); /* 7 days */
+  gap: 2px;
+}
 
-    .day-labels span {
-      flex: 1;
-      text-align: center;
-      font-size: 0.9rem;
-      color: #b9b9cc;
-    }
-  </style>
+.availability-cell {
+  width: 100%;
+  height: 20px; /* match time label height */
+  background: #444454; /* base gray */
+  border-radius: 2px;
+}
+</style>
 </head>
 <body>
 
@@ -83,116 +85,104 @@
 
 <main>
   <h2>Members Availability</h2>
+  <button id="editButton" onclick="window.location='edit.html'">Edit Availability</button>
 
-  <div class="day-labels">
-    <span>Sun</span>
-    <span>Mon</span>
-    <span>Tue</span>
-    <span>Wed</span>
-    <span>Thu</span>
-    <span>Fri</span>
-    <span>Sat</span>
+  <div class="availability-wrapper">
+    <div class="time-labels" id="timeLabels"></div>
+    <div id="availabilityGrid" class="availability-grid"></div>
   </div>
-
-  <div id="availabilityGrid" class="availability-grid"></div>
 </main>
 
 <!-- Firebase SDK -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.15.0/firebase-app.js";
-  import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.15.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.15.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.15.0/firebase-firestore.js";
 
-  // Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyADRD-ZSdmtLAChpCJSg2m-eGD8KkZQLAw",
-    authDomain: "echo-frontier.firebaseapp.com",
-    projectId: "echo-frontier",
-    storageBucket: "echo-frontier.firebasestorage.app",
-    messagingSenderId: "483328395754",
-    appId: "1:483328395754:web:8426b8abe728f6fd5e0a93"
-  };
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyADRD-ZSdmtLAChpCJSg2m-eGD8KkZQLAw",
+  authDomain: "echo-frontier.firebaseapp.com",
+  projectId: "echo-frontier",
+  storageBucket: "echo-frontier.firebasestorage.app",
+  messagingSenderId: "483328395754",
+  appId: "1:483328395754:web:8426b8abe728f6fd5e0a93"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  // -----------------------------
-  // CONFIG
-  const memberId = prompt("Enter your username"); // temporary simple login
-  const hours = 24;
-  const days = 7;
+// --------------- CONFIG ------------------
+const hours = 24;
+const increments = 2; // half hour increments → 48 rows
+const days = 7;
+const gridEl = document.getElementById("availabilityGrid");
+const labelsEl = document.getElementById("timeLabels");
 
-  const gridEl = document.getElementById("availabilityGrid");
-  const availability = {}; // local copy
+// Build time labels
+for (let h = 0; h < hours; h++) {
+  for (let i = 0; i < increments; i++) {
+    const time = new Date();
+    time.setHours(h, i*30,0,0);
+    const label = document.createElement("div");
+    label.textContent = time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    labelsEl.appendChild(label);
+  }
+}
 
-  // -----------------------------
-  // Build grid
+// Build grid cells
+const cells = [];
+for (let row = 0; row < hours*increments; row++) {
   for (let day = 0; day < days; day++) {
-    for (let hour = 0; hour < hours; hour++) {
-      const key = `${day}-${hour}`;
-      const cell = document.createElement("div");
-      cell.classList.add("availability-cell");
-      cell.dataset.key = key;
-      cell.addEventListener("click", () => toggleCell(key, cell));
-      gridEl.appendChild(cell);
-    }
+    const cell = document.createElement("div");
+    cell.classList.add("availability-cell");
+    cell.dataset.day = day;
+    cell.dataset.row = row;
+    gridEl.appendChild(cell);
+    cells.push(cell);
   }
+}
 
-  // -----------------------------
-  // Toggle local availability
-  function toggleCell(key, cell) {
-    availability[key] = !availability[key];
-    updateCell(cell, availability[key]);
-    saveAvailability();
-  }
+// --------------- Firestore ------------------
+const availCollection = collection(db, "availability");
 
-  function updateCell(cell, value) {
-    if (value) {
-      cell.classList.add("available");
-    } else {
-      cell.classList.remove("available");
-    }
-  }
+// Listen to all members
+onSnapshot(availCollection, (snap) => {
+  // Clear all cells
+  cells.forEach(cell => cell.style.background = "#444454");
 
-  // -----------------------------
-  // Firestore doc
-  const memberDoc = doc(db, "availability", memberId);
-
-  async function saveAvailability() {
-    await setDoc(memberDoc, { slots: availability });
-  }
-
-  async function loadAvailability() {
-    const snapshot = await getDoc(memberDoc);
-    if (snapshot.exists()) {
-      const slots = snapshot.data().slots || {};
-      Object.assign(availability, slots);
-      // update UI
-      for (const [key, val] of Object.entries(slots)) {
-        const cell = gridEl.querySelector(`[data-key="${key}"]`);
-        if (cell) updateCell(cell, val);
-      }
-    }
-  }
-
-  loadAvailability();
-
-  // -----------------------------
-  // Real-time updates for all members
-  const availCollection = collection(db, "availability");
-  onSnapshot(availCollection, (snap) => {
-    snap.docs.forEach(docSnap => {
-      const data = docSnap.data().slots || {};
-      const otherMember = docSnap.id;
-      if (otherMember === memberId) return; // skip yourself
-      for (const [key, val] of Object.entries(data)) {
-        const cell = gridEl.querySelector(`[data-key="${key}"]`);
-        if (cell) {
-          if (val) cell.classList.add("other");
-          else cell.classList.remove("other");
-        }
-      }
-    });
+  const memberData = [];
+  snap.docs.forEach(docSnap => {
+    const data = docSnap.data().slots || {};
+    memberData.push(data);
   });
+
+  // Count availability per cell
+  cells.forEach(cell => {
+    const day = parseInt(cell.dataset.day);
+    const row = parseInt(cell.dataset.row);
+
+    // Convert row/day to UTC key
+    const hour = Math.floor(row/2);
+    const minute = (row%2)*30;
+    const utcDate = new Date();
+    utcDate.setUTCDate(utcDate.getUTCDate() - utcDate.getUTCDay() + day);
+    utcDate.setUTCHours(hour, minute,0,0);
+
+    let count = 0;
+    memberData.forEach(slots => {
+      const key = utcDate.toISOString();
+      if (slots[key]) count++;
+    });
+
+    // Gradient based on % of members available
+    const ratio = count / memberData.length;
+    if (ratio>0) {
+      const blue = Math.floor(100 + ratio*155);
+      cell.style.background = `rgb(0, 0, ${blue})`;
+    }
+  });
+});
 </script>
+
 </body>
 </html>
