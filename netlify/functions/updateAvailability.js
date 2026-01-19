@@ -1,51 +1,39 @@
+// saveAvailability.js (serverless endpoint)
 import fetch from "node-fetch";
 
-export async function handler(event) {
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
-  }
+export default async function handler(req, res) {
+  if (req.method !== "POST") return res.status(405).end();
 
-  const { jsonData, githubPath, branch } = JSON.parse(event.body);
+  const { availabilityData, memberId } = req.body;
+  const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+  const REPO_OWNER = "GDAbomination";
+  const REPO_NAME = "availability-tracker";
+  const FILE_PATH = "availability.json";
+  const BRANCH = "main";
 
-  // GitHub repo info
-  const owner = "GDAbomination";
-  const repo = "availability-tracker";
-  const path = githubPath || "availability.json";
-  const targetBranch = branch || "main";
+  try {
+    // Get current SHA
+    const getResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}?ref=${BRANCH}`, {
+      headers: { Authorization: `token ${GITHUB_TOKEN}` }
+    });
+    const data = await getResp.json();
+    const sha = data.sha;
 
-  // Your GitHub token (store in Netlify env var GITHUB_TOKEN)
-  const token = process.env.GITHUB_TOKEN;
-
-  // Get current SHA of the file
-  const getRes = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${targetBranch}`,
-    {
-      headers: { Authorization: `token ${token}` },
-    }
-  );
-  const data = await getRes.json();
-  const sha = data.sha; // required to update existing file
-
-  // Update file
-  const updateRes = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
-    {
+    // Update file
+    const putResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
       method: "PUT",
-      headers: {
-        Authorization: `token ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `token ${GITHUB_TOKEN}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: "Update availability via web",
-        content: Buffer.from(JSON.stringify(jsonData, null, 2)).toString(
-          "base64"
-        ),
+        message: `Update availability by ${memberId}`,
+        content: Buffer.from(JSON.stringify(availabilityData, null, 2)).toString("base64"),
         sha,
-        branch: targetBranch,
-      }),
-    }
-  );
+        branch: BRANCH
+      })
+    });
 
-  const result = await updateRes.json();
-  return { statusCode: 200, body: JSON.stringify(result) };
+    const result = await putResp.json();
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 }
