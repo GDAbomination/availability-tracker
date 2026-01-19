@@ -23,6 +23,27 @@ header {
   gap: 14px;
 }
 
+.section-title {
+  margin-top: 48px;
+  margin-bottom: 16px;
+  font-size: 1.4rem;
+  letter-spacing: 0.05em;
+}
+
+.showcase {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.showcase img {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid #2a2a3a;
+  background: #0b0b10;
+}
+
 .header-title img {
   height: 2.4rem; /* matches h1 font-size */
   width: auto;
