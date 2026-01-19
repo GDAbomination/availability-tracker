@@ -94,7 +94,8 @@ p {
 
 .showcase img {
   width: 100%;
-  max-height: calc(100vh - 320px);
+  max-height: 384px;
+  height: auto;
   object-fit: contain;
 
   border-radius: 6px;
