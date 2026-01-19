@@ -4,130 +4,34 @@
 <meta charset="UTF-8">
 <title>Edit Availability</title>
 <style>
-body {
-  background: #0f0f14;
-  color: #e6e6eb;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  margin: 0;
-  padding: 0;
-}
-
-header {
-  padding: 32px 24px 20px;
-  text-align: center;
-}
-
-.header-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.header-title img {
-  height: 2.4rem;
-  width: auto;
-}
-
-.header-title h1 {
-  font-size: 2.4rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  line-height: 1;
-}
-
-nav {
-  position: sticky;
-  top: 0;
-  height: 56px;
-  background: #151520;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-bottom: 1px solid #2a2a3a;
-}
-
-nav a {
-  color: #cfcfe8;
-  text-decoration: none;
-  margin: 0 28px;
-  font-weight: 500;
-}
-
-nav a:hover { color: #fff; }
-
-nav a.active { color: #6aa6ff; }
-
-main {
-  max-width: 1200px;
-  margin: 40px auto;
-  padding: 0 24px;
-}
-
-h2 { font-size: 2rem; margin-bottom: 16px; }
-
-.edit-wrapper { display: flex; flex-direction: column; gap: 4px; overflow-x: auto; }
-
-/* Days header */
-.days-header {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-  margin-bottom: 4px;
-}
-
-.days-header div {
-  text-align: center;
-  font-size: 0.9rem;
-  color: #b9b9cc;
-}
-
-/* Time labels + grid wrapper */
-.time-grid-wrapper {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 4px;
-  align-items: start;
-  overflow-x: auto;
-}
-
-/* Time labels */
-.time-labels {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-}
-
-.time-labels div {
-  height: 22px;
-  line-height: 20px;
-  font-size: 0.7rem;
-  color: #b9b9cc;
-  text-align: right;
-  padding-right: 4px;
-}
-
-/* Grid */
-.edit-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-}
-
-.edit-cell {
-  width: 100%;
-  height: 20px;
-  background: #444454;
-  border-radius: 2px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.edit-cell.active { background: #6aa6ff; }
-.edit-cell:hover { background: #6666ff; }
+body { background: #0f0f14; color: #e6e6eb; font-family: system-ui, sans-serif; margin:0; padding:0;}
+header{padding:32px 24px 20px;text-align:center;}
+.header-title{display:inline-flex;align-items:center;gap:14px;}
+.header-title img{height:2.4rem;width:auto;}
+.header-title h1{font-size:2.4rem;font-weight:600;letter-spacing:0.05em;line-height:1;}
+nav{position:sticky;top:0;height:56px;background:#151520;display:flex;justify-content:center;align-items:center;border-bottom:1px solid #2a2a3a;}
+nav a{color:#cfcfe8;text-decoration:none;margin:0 28px;font-weight:500;}
+nav a:hover{color:#fff;}
+nav a.active{color:#6aa6ff;}
+main{max-width:1200px;margin:40px auto;padding:0 24px;}
+h2{font-size:2rem;margin-bottom:16px;}
+.edit-wrapper{display:flex;flex-direction:column;gap:4px;overflow-x:auto;}
+.days-header{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;}
+.days-header div{text-align:center;font-size:0.9rem;color:#b9b9cc;}
+.time-grid-wrapper{display:grid;grid-template-columns:auto 1fr;gap:4px;align-items:start;overflow-x:auto;}
+.time-labels{display:flex;flex-direction:column;flex-shrink:0;}
+.time-labels div{height:22px;line-height:20px;font-size:0.7rem;color:#b9b9cc;text-align:right;padding-right:4px;}
+.edit-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.edit-cell{width:100%;height:20px;background:#444454;border-radius:2px;cursor:pointer;transition:background 0.2s;}
+.edit-cell.active{background:#6aa6ff;}
+.edit-cell:hover{background:#6666ff;}
+.availability-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:16px;}
+#memberSelect{flex:1;max-width:200px;text-align:center;padding:6px 10px;font-size:1rem;border-radius:4px;border:1px solid #2a2a3a;background:#151520;color:#e6e6eb;margin:0 auto;}
+#saveButton{flex:1;max-width:100px;padding:6px 16px;font-size:1rem;background:#6aa6ff;color:white;border:none;border-radius:4px;cursor:pointer;}
+#saveButton:hover{background:#5590e0;}
 </style>
 </head>
 <body>
-
 <header>
   <div class="header-title">
     <img src="icon.png" alt="Studio Icon">
@@ -142,7 +46,12 @@ h2 { font-size: 2rem; margin-bottom: 16px; }
 </nav>
 
 <main>
-  <h2>Edit Availability</h2>
+  <div class="availability-header">
+    <h2>Edit Availability</h2>
+    <select id="memberSelect"></select>
+    <button id="saveButton">Save</button>
+  </div>
+
   <div class="edit-wrapper">
     <div class="days-header" id="daysHeader"></div>
     <div class="time-grid-wrapper">
@@ -153,84 +62,119 @@ h2 { font-size: 2rem; margin-bottom: 16px; }
 </main>
 
 <script>
-const hours = 24;
-const increments = 2; // half-hour increments
-const days = 7;
+const hours=24, increments=2, days=7;
+const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const timeLabelsEl=document.getElementById("timeLabels");
+const daysHeaderEl=document.getElementById("daysHeader");
+const gridEl=document.getElementById("editGrid");
+const memberSelect=document.getElementById("memberSelect");
+const saveButton=document.getElementById("saveButton");
 
-const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-const timeLabelsEl = document.getElementById("timeLabels");
-const daysHeaderEl = document.getElementById("daysHeader");
-const gridEl = document.getElementById("editGrid");
-const cells = [];
+const cells=[];
 
-// Days header
-dayNames.forEach(d => {
-  const div = document.createElement("div");
-  div.textContent = d;
+// Build days header
+dayNames.forEach(d=>{
+  const div=document.createElement("div");
+  div.textContent=d;
   daysHeaderEl.appendChild(div);
 });
 
-// Time labels
-for (let h=0; h<hours; h++){
-  for (let i=0; i<increments; i++){
-    const div = document.createElement("div");
-    const date = new Date();
-    date.setHours(h, i*30, 0, 0);
-    div.textContent = date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+// Build time labels
+for(let h=0;h<hours;h++){
+  for(let i=0;i<increments;i++){
+    const div=document.createElement("div");
+    const date=new Date(); date.setHours(h,i*30,0,0);
+    div.textContent=date.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     timeLabelsEl.appendChild(div);
   }
 }
 
-// Build 7x48 grid
-for (let row=0; row<hours*increments; row++){
-  for (let day=0; day<days; day++){
-    const cell = document.createElement("div");
+// Build grid
+for(let row=0;row<hours*increments;row++){
+  for(let day=0;day<days;day++){
+    const cell=document.createElement("div");
     cell.classList.add("edit-cell");
-    cell.dataset.row = row;
-    cell.dataset.day = day;
+    cell.dataset.row=row;
+    cell.dataset.day=day;
     gridEl.appendChild(cell);
     cells.push(cell);
   }
 }
 
-// Click/drag logic
-let isDragging = false;
-let dragValue = true;
+// Click/touch drag logic
+let isDragging=false, dragValue=true;
+function setCell(cell,value){ if(value) cell.classList.add("active"); else cell.classList.remove("active"); }
+cells.forEach(cell=>{
+  cell.addEventListener("mousedown",e=>{ e.preventDefault(); isDragging=true; dragValue=!cell.classList.contains("active"); setCell(cell,dragValue); });
+  cell.addEventListener("mouseenter",()=>{ if(isDragging) setCell(cell,dragValue); });
+});
+document.addEventListener("mouseup",()=>isDragging=false);
+cells.forEach(cell=>{
+  cell.addEventListener("touchstart",e=>{ e.preventDefault(); dragValue=!cell.classList.contains("active"); setCell(cell,dragValue); });
+  cell.addEventListener("touchmove",e=>{ e.preventDefault(); const touch=e.touches[0]; const target=document.elementFromPoint(touch.clientX,touch.clientY); if(target && target.classList.contains("edit-cell")) setCell(target,dragValue); });
+});
 
-function setCell(cell, value){
-  if(value) cell.classList.add("active");
-  else cell.classList.remove("active");
+// --- Load JSON ---
+let availabilityData={};
+async function loadJSON(){
+  const res=await fetch("availability.json");
+  availabilityData=await res.json();
+
+  // Populate dropdown
+  memberSelect.innerHTML="";
+  memberSelect.innerHTML="<option value='member0'>Default (empty)</option>";
+  Object.keys(availabilityData).forEach(m=>{
+    memberSelect.innerHTML+=`<option value="${m}">${m}</option>`;
+  });
+}
+loadJSON();
+
+// --- Populate grid ---
+function populateGrid(slots){
+  cells.forEach(c=>c.classList.remove("active"));
+  slots.forEach(s=>{
+    const utc=new Date(s);
+    const local=new Date(utc.getTime()-utc.getTimezoneOffset()*60000); // convert UTC->local
+    const day=local.getDay();
+    const row=local.getHours()*2 + (local.getMinutes()>=30?1:0);
+    const index=row*7 + day;
+    if(index>=0 && index<cells.length) cells[index].classList.add("active");
+  });
 }
 
-// Mouse
-cells.forEach(cell=>{
-  cell.addEventListener("mousedown", e=>{
-    e.preventDefault();
-    isDragging=true;
-    dragValue=!cell.classList.contains("active");
-    setCell(cell, dragValue);
-  });
-  cell.addEventListener("mouseenter", ()=>{
-    if(isDragging) setCell(cell, dragValue);
-  });
+// --- Handle dropdown ---
+memberSelect.addEventListener("change",()=>{
+  const val=memberSelect.value;
+  if(val==="member0"){ cells.forEach(c=>c.classList.remove("active")); return; }
+  populateGrid(availabilityData[val].slots||[]);
 });
-document.addEventListener("mouseup", ()=>isDragging=false);
 
-// Touch
-cells.forEach(cell=>{
-  cell.addEventListener("touchstart", e=>{
-    e.preventDefault();
-    dragValue=!cell.classList.contains("active");
-    setCell(cell, dragValue);
+// --- Handle Save ---
+saveButton.addEventListener("click",()=>{
+  const member=memberSelect.value;
+  if(member==="member0"){ alert("Cannot save default member"); return; }
+
+  const slots=[];
+  cells.forEach(c=>{
+    if(c.classList.contains("active")){
+      const row=parseInt(c.dataset.row), day=parseInt(c.dataset.day);
+      const hour=Math.floor(row/2), minute=(row%2)*30;
+      const d=new Date(); d.setHours(hour,minute,0,0); d.setDate(d.getDate()-d.getDay()+day);
+      slots.push(new Date(d.getTime()+d.getTimezoneOffset()*60000).toISOString()); // convert local->UTC
+    }
   });
-  cell.addEventListener("touchmove", e=>{
-    e.preventDefault();
-    const touch = e.touches[0];
-    const target = document.elementFromPoint(touch.clientX, touch.clientY);
-    if(target && target.classList.contains("edit-cell")) setCell(target, dragValue);
-  });
+
+  // Update in-memory JSON
+  availabilityData[member].slots=slots;
+
+  // Download new JSON
+  const blob=new Blob([JSON.stringify(availabilityData,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download="availability.json"; a.click();
+  URL.revokeObjectURL(url);
+  alert("Availability saved! Download the updated JSON.");
 });
 </script>
-
 </body>
 </html>
