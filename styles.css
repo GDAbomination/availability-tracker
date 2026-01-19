@@ -79,6 +79,7 @@ p {
   color: #b9b9cc;
 }
 
+/* ---------- Section Titles ---------- */
 .section-title {
   margin-top: 48px;
   margin-bottom: 16px;
@@ -86,6 +87,7 @@ p {
   letter-spacing: 0.05em;
 }
 
+/* ---------- Showcase Grid ---------- */
 .showcase {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -97,7 +99,6 @@ p {
   max-height: 384px;
   height: auto;
   object-fit: contain;
-
   border-radius: 6px;
   border: 0px solid #2a2a3a;
   background: #0b0b10;
@@ -134,4 +135,70 @@ p {
   font-size: 0.9rem;
   color: #b9b9cc;
   margin-top: 4px;
+}
+
+/* ---------- Availability Page ---------- */
+
+/* Header row with inline edit button */
+.availability-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.availability-header h2 {
+  margin: 0;
+}
+
+#editButton {
+  padding: 6px 16px;
+  font-size: 1rem;
+  background: #6aa6ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#editButton:hover {
+  background: #5590e0;
+}
+
+/* Wrapper with time labels and grid */
+.availability-wrapper {
+  display: flex;
+  align-items: flex-start;
+  overflow-x: auto; /* horizontal scroll on small screens */
+  gap: 4px;
+}
+
+/* Time labels column */
+.time-labels {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.time-labels div {
+  height: 20px; /* row height */
+  font-size: 0.7rem;
+  color: #b9b9cc;
+  text-align: right;
+  padding-right: 4px;
+  line-height: 20px;
+}
+
+/* Availability grid */
+.availability-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr); /* 7 days */
+  gap: 2px;
+}
+
+.availability-cell {
+  width: 20px;   /* fixed square width */
+  height: 20px;  /* matches label row height */
+  background: #444454; /* base gray */
+  border-radius: 2px;
 }
