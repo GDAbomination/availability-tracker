@@ -12,12 +12,50 @@ main {
   padding: 0 24px;
 }
 
-h2 {
-  font-size: 2rem;
+/* Header row: title + dropdown + save */
+.availability-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 16px;
+  gap: 16px;
 }
 
-/* Wrapper for header + grid */
+.availability-header h2 {
+  margin: 0;
+  flex: 1;
+}
+
+#memberSelect {
+  flex: 1;
+  max-width: 200px;
+  text-align: center;
+  padding: 6px 10px;
+  font-size: 1rem;
+  border-radius: 4px;
+  border: 1px solid #2a2a3a;
+  background: #151520;
+  color: #e6e6eb;
+  margin: 0 auto;
+}
+
+#saveButton {
+  flex: 1;
+  max-width: 100px;
+  padding: 6px 16px;
+  font-size: 1rem;
+  background: #6aa6ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#saveButton:hover {
+  background: #5590e0;
+}
+
+/* Wrapper for days + grid */
 .edit-wrapper {
   display: flex;
   flex-direction: column;
@@ -25,24 +63,24 @@ h2 {
   overflow-x: auto;
 }
 
-/* Days header */
+/* Days of the week header */
 .days-header {
   display: grid;
-  grid-template-columns: repeat(7, 1fr); /* 7 day columns */
+  grid-template-columns: repeat(7, 1fr);
   gap: 2px;
   margin-bottom: 4px;
 }
 
 .days-header div {
   text-align: center;
-  color: #b9b9cc;
   font-size: 0.9rem;
+  color: #b9b9cc;
 }
 
-/* Time + grid wrapper */
+/* Time labels + grid wrapper */
 .time-grid-wrapper {
   display: grid;
-  grid-template-columns: auto 1fr; /* time labels + main grid */
+  grid-template-columns: auto 1fr;
   gap: 4px;
   align-items: start;
   overflow-x: auto;
@@ -56,7 +94,7 @@ h2 {
 }
 
 .time-labels div {
-  height: 22px;       /* each row height */
+  height: 22px;
   line-height: 20px;
   font-size: 0.7rem;
   color: #b9b9cc;
@@ -71,9 +109,8 @@ h2 {
   gap: 2px;
 }
 
-/* Each cell stretches to fit the grid row height automatically */
 .edit-cell {
-  width: 100%;   /* stretch to fill column */
+  width: 100%;
   height: 20px;
   background: #444454;
   border-radius: 2px;
@@ -82,7 +119,11 @@ h2 {
 }
 
 .edit-cell.active {
-  background: #6aa6ff; /* selected color */
+  background: #6aa6ff;
+}
+
+.edit-cell:hover {
+  background: #6666ff;
 }
 </style>
 </head>
@@ -103,10 +144,7 @@ h2 {
 
 <main>
   <div class="availability-header">
-  <!-- Left: Title -->
     <h2>Edit Availability</h2>
-
-  <!-- Center: Member dropdown -->
     <select id="memberSelect">
       <option value="member0">select...</option>
       <option value="member1">Speedix08</option>
@@ -115,20 +153,14 @@ h2 {
       <option value="member4">Flame</option>
       <option value="member5">Lele</option>
     </select>
-
-  <!-- Right: Save button -->
     <button id="saveButton">Save</button>
   </div>
 
-
   <div class="edit-wrapper">
-    <!-- Days of the week header -->
     <div class="days-header" id="daysHeader"></div>
-
-    <!-- Time labels + grid -->
     <div class="time-grid-wrapper">
       <div class="time-labels" id="timeLabels"></div>
-      <div id="editGrid" class="edit-grid"></div>
+      <div class="edit-grid" id="editGrid"></div>
     </div>
   </div>
 </main>
@@ -137,7 +169,7 @@ h2 {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.15.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.15.0/firebase-firestore.js";
 
-// -------- Firebase Setup --------
+// Firebase setup
 const firebaseConfig = {
   apiKey: "AIzaSyADRD-ZSdmtLAChpCJSg2m-eGD8KkZQLAw",
   authDomain: "echo-frontier.firebaseapp.com",
@@ -146,174 +178,142 @@ const firebaseConfig = {
   messagingSenderId: "483328395754",
   appId: "1:483328395754:web:8426b8abe728f6fd5e0a93"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// -------- DOM Elements --------
+// Grid constants
 const hours = 24;
-const increments = 2; // 30 min
+const increments = 2;
 const days = 7;
+const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
 const timeLabelsEl = document.getElementById("timeLabels");
 const daysHeaderEl = document.getElementById("daysHeader");
 const gridEl = document.getElementById("editGrid");
 const memberSelect = document.getElementById("memberSelect");
 const saveButton = document.getElementById("saveButton");
-
-const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const cells = [];
 
-// -------- Build Days Header --------
-for (let d = 0; d < days; d++) {
+// Build days header
+dayNames.forEach(d => {
   const div = document.createElement("div");
-  div.textContent = dayNames[d];
+  div.textContent = d;
   daysHeaderEl.appendChild(div);
-}
+});
 
-// -------- Build Time Labels --------
+// Build time labels
 for (let h = 0; h < hours; h++) {
   for (let i = 0; i < increments; i++) {
-    const date = new Date();
-    date.setHours(h, i * 30, 0, 0);
     const label = document.createElement("div");
+    const date = new Date();
+    date.setHours(h, i*30, 0, 0);
     label.textContent = date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
     timeLabelsEl.appendChild(label);
   }
 }
 
-// -------- Build 7x48 Grid --------
-for (let row = 0; row < hours * increments; row++) {
-  for (let day = 0; day < days; day++) {
+// Build 7x48 grid
+for (let row=0; row<hours*increments; row++){
+  for (let day=0; day<days; day++){
     const cell = document.createElement("div");
     cell.classList.add("edit-cell");
-    cell.dataset.day = day;
     cell.dataset.row = row;
+    cell.dataset.day = day;
     gridEl.appendChild(cell);
     cells.push(cell);
   }
 }
 
-// -------- Click + Touch + Drag Logic --------
+// Click / drag logic
 let isDragging = false;
 let dragValue = true;
-
-function setCell(cell, value, ignoreMember0 = false) {
-  if (ignoreMember0 && memberSelect.value === "member0") return; // member0 grid read-only
-  if (value) cell.classList.add("active");
+function setCell(cell, value, ignoreMember0=false){
+  if(ignoreMember0 && memberSelect.value==="member0") return;
+  if(value) cell.classList.add("active");
   else cell.classList.remove("active");
 }
-
-// Mouse Events
-cells.forEach(cell => {
-  cell.addEventListener("mousedown", e => {
+cells.forEach(cell=>{
+  cell.addEventListener("mousedown", e=>{
     e.preventDefault();
-    isDragging = true;
-    dragValue = !cell.classList.contains("active");
+    isDragging=true;
+    dragValue=!cell.classList.contains("active");
     setCell(cell, dragValue, true);
   });
-  cell.addEventListener("mouseenter", () => {
-    if (isDragging) setCell(cell, dragValue, true);
+  cell.addEventListener("mouseenter", ()=>{
+    if(isDragging) setCell(cell, dragValue, true);
   });
 });
-document.addEventListener("mouseup", () => isDragging = false);
+document.addEventListener("mouseup", ()=>isDragging=false);
 
-// Touch Events
-cells.forEach(cell => {
-  cell.addEventListener("touchstart", e => {
+// Touch events
+cells.forEach(cell=>{
+  cell.addEventListener("touchstart", e=>{
     e.preventDefault();
-    dragValue = !cell.classList.contains("active");
+    dragValue=!cell.classList.contains("active");
     setCell(cell, dragValue, true);
   });
-  cell.addEventListener("touchmove", e => {
+  cell.addEventListener("touchmove", e=>{
     e.preventDefault();
     const touch = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (target && target.classList.contains("edit-cell")) {
-      setCell(target, dragValue, true);
-    }
+    if(target && target.classList.contains("edit-cell")) setCell(target, dragValue, true);
   });
 });
 
-// -------- Populate Member Dropdown --------
-async function loadMembers() {
-  memberSelect.innerHTML = '<option value="member0">Member 0</option>'; // default
-  const snapshot = await getDocs(collection(db, "members"));
-  snapshot.forEach(docSnap => {
-    if (docSnap.id !== "member0") {
-      const opt = document.createElement("option");
-      opt.value = docSnap.id;
-      opt.textContent = docSnap.data().name;
-      memberSelect.appendChild(opt);
-    }
-  });
-}
-await loadMembers();
+// Load default member0
+async function loadAvailability(memberId){
+  cells.forEach(c=>c.classList.remove("active"));
+  if(memberId==="member0") return;
 
-// -------- Load Availability for Selected Member --------
-async function loadAvailability(memberId) {
-  // Clear all cells
-  cells.forEach(c => c.classList.remove("active"));
-
-  if (memberId === "member0") return; // default grid always empty
-
-  const docRef = doc(db, "availability", memberId);
+  const docRef = doc(db,"availability",memberId);
   const docSnap = await getDoc(docRef);
-  if (!docSnap.exists()) return;
-
+  if(!docSnap.exists()) return;
   const slots = docSnap.data().slots || {};
 
-  for (const utcStr in slots) {
+  for(const utcStr in slots){
     const utcDate = new Date(utcStr);
-    const localDate = new Date(utcDate.getTime() + utcDate.getTimezoneOffset()*60000);
+    const localDate = new Date(utcDate.getTime()+utcDate.getTimezoneOffset()*60000);
     const day = localDate.getDay();
     const hour = localDate.getHours();
     const minute = localDate.getMinutes();
-    const row = hour * 2 + (minute >= 30 ? 1 : 0);
-    const index = row * days + day;
-    if (index >= 0 && index < cells.length) {
-      cells[index].classList.add("active");
-    }
+    const row = hour*2 + (minute>=30?1:0);
+    const index = row*days + day;
+    if(index>=0 && index<cells.length) cells[index].classList.add("active");
   }
 }
 
-// Load default member0 on start
+// Initial load
 await loadAvailability("member0");
 
-// Load selected member
-memberSelect.addEventListener("change", () => {
-  loadAvailability(memberSelect.value);
-});
+// Dropdown change
+memberSelect.addEventListener("change", ()=>loadAvailability(memberSelect.value));
 
-// -------- Save Button --------
-saveButton.addEventListener("click", async () => {
-  if (memberSelect.value === "member0") return; // never save default
+// Save button
+saveButton.addEventListener("click", async ()=>{
+  if(memberSelect.value==="member0") return;
 
   const availability = {};
-  cells.forEach(cell => {
-    if (cell.classList.contains("active")) {
+  cells.forEach(cell=>{
+    if(cell.classList.contains("active")){
       const day = parseInt(cell.dataset.day);
       const row = parseInt(cell.dataset.row);
-      const hour = Math.floor(row / 2);
-      const minute = (row % 2) * 30;
-
+      const hour = Math.floor(row/2);
+      const minute = (row%2)*30;
       const localDate = new Date();
       localDate.setHours(hour, minute, 0, 0);
       const today = new Date();
-      const diff = day - today.getDay();
-      localDate.setDate(localDate.getDate() + diff);
-
-      // Convert local -> UTC
-      const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset()*60000);
-      availability[utcDate.toISOString()] = true;
+      const diff = day-today.getDay();
+      localDate.setDate(localDate.getDate()+diff);
+      const utcDate = new Date(localDate.getTime()-localDate.getTimezoneOffset()*60000);
+      availability[utcDate.toISOString()]=true;
     }
   });
 
-  try {
-    await setDoc(doc(db, "availability", memberSelect.value), { slots: availability });
-    window.location.href = "availability.html"; // redirect after save
-  } catch (e) {
-    console.error("Error saving availability:", e);
+  try{
+    await setDoc(doc(db,"availability",memberSelect.value), {slots: availability});
+    window.location.href="availability.html";
+  }catch(e){
+    console.error(e);
     alert("Error saving availability");
   }
 });
