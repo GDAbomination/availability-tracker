@@ -238,24 +238,35 @@ loadMembers();
 
 // ----- Load availability for a member -----
 async function loadAvailability(memberId) {
-  // Clear all cells
+  // Clear all cells first
   cells.forEach(c => c.classList.remove("active"));
 
-  const docSnap = await getDoc(doc(db, "availability", memberId));
-  if (!docSnap.exists()) return;
+  const docRef = doc(db, "availability", memberId);
+  const docSnap = await getDoc(docRef);
+
+  if (!docSnap.exists()) {
+    console.warn(`${memberId} has no document yet. Creating empty one.`);
+    // Create empty slots document so edits can save
+    await setDoc(docRef, { slots: {} });
+    return;
+  }
+
   const slots = docSnap.data().slots || {};
 
   for (const utcStr in slots) {
-    const utcDate = new Date(utcStr);
-
-    // Convert UTC -> local
-    const localDate = new Date(utcDate.getTime() + utcDate.getTimezoneOffset()*60000);
-    const day = localDate.getDay();
-    const hour = localDate.getHours();
-    const minute = localDate.getMinutes();
-    const row = hour*2 + (minute >= 30 ? 1 : 0);
-    const index = row*days + day;
-    if (cells[index]) cells[index].classList.add("active");
+    try {
+      const utcDate = new Date(utcStr);
+      // Convert UTC -> local
+      const localDate = new Date(utcDate.getTime() + utcDate.getTimezoneOffset()*60000);
+      const day = localDate.getDay();
+      const hour = localDate.getHours();
+      const minute = localDate.getMinutes();
+      const row = hour*2 + (minute >= 30 ? 1 : 0);
+      const index = row*days + day;
+      if (cells[index]) cells[index].classList.add("active");
+    } catch(e) {
+      console.error("Invalid slot UTC string:", utcStr, e);
+    }
   }
 }
 
