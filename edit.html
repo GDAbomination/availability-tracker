@@ -17,33 +17,18 @@ h2 {
   margin-bottom: 16px;
 }
 
-/* Wrapper for labels + grid */
+/* Wrapper for header + grid */
 .edit-wrapper {
   display: flex;
+  flex-direction: column;
   gap: 4px;
   overflow-x: auto;
 }
 
-/* Time labels on the left */
-.time-labels {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-}
-
-.time-labels div {
-  height: 20px;       /* match cell height */
-  font-size: 0.7rem;
-  color: #b9b9cc;
-  text-align: right;
-  padding-right: 4px;
-  line-height: 20px;
-}
-
-/* Days header above grid */
+/* Days header */
 .days-header {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, 1fr); /* 7 day columns */
   gap: 2px;
   margin-bottom: 4px;
 }
@@ -54,25 +39,50 @@ h2 {
   font-size: 0.9rem;
 }
 
-/* Availability grid */
+/* Time + grid wrapper */
+.time-grid-wrapper {
+  display: grid;
+  grid-template-columns: auto 1fr; /* time labels + main grid */
+  gap: 4px;
+  align-items: start;
+  overflow-x: auto;
+}
+
+/* Time labels */
+.time-labels {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.time-labels div {
+  height: 20px;       /* each row height */
+  line-height: 20px;
+  font-size: 0.7rem;
+  color: #b9b9cc;
+  text-align: right;
+  padding-right: 4px;
+}
+
+/* Edit grid */
 .edit-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 2px;
 }
 
+/* Each cell stretches to fit the grid row height automatically */
 .edit-cell {
-  width: 20px;
-  height: 20px;
-  background: #444454;  /* base gray */
+  width: 100%;   /* stretch to fill column */
+  aspect-ratio: 1 / 1; /* makes cell square relative to width */
+  background: #444454;
   border-radius: 2px;
   cursor: pointer;
   transition: background 0.2s;
 }
 
-/* Optional hover highlight */
-.edit-cell:hover {
-  background: #6666ff;
+.edit-cell.hover {
+  background: #6aa6ff; /* selected color */
 }
 </style>
 </head>
@@ -94,16 +104,18 @@ h2 {
 <main>
   <h2>Edit Availability</h2>
 
-  <!-- Days header -->
-  <div class="edit-wrapper" style="flex-direction: column;">
+  <div class="edit-wrapper">
+    <!-- Days of the week header -->
     <div class="days-header" id="daysHeader"></div>
 
-    <div class="edit-wrapper">
+    <!-- Time labels + grid -->
+    <div class="time-grid-wrapper">
       <div class="time-labels" id="timeLabels"></div>
       <div id="editGrid" class="edit-grid"></div>
     </div>
   </div>
 </main>
+
 
 <script>
 const hours = 24;
