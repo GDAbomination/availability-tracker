@@ -1,1 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Edit Availability</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ---------- Page-specific ---------- */
+main {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 24px;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-bottom: 16px;
+}
+
+/* Wrapper for labels + grid */
+.edit-wrapper {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+/* Time labels on the left */
+.time-labels {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.time-labels div {
+  height: 20px;       /* match cell height */
+  font-size: 0.7rem;
+  color: #b9b9cc;
+  text-align: right;
+  padding-right: 4px;
+  line-height: 20px;
+}
+
+/* Days header above grid */
+.days-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.days-header div {
+  text-align: center;
+  color: #b9b9cc;
+  font-size: 0.9rem;
+}
+
+/* Availability grid */
+.edit-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.edit-cell {
+  width: 20px;
+  height: 20px;
+  background: #444454;  /* base gray */
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+/* Optional hover highlight */
+.edit-cell:hover {
+  background: #6666ff;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-title">
+    <img src="icon.png" alt="Studio Icon">
+    <h1>Echo Studio</h1>
+  </div>
+</header>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="members.html">Members</a>
+  <a href="availability.html">Availability</a>
+</nav>
+
+<main>
+  <h2>Edit Availability</h2>
+
+  <!-- Days header -->
+  <div class="edit-wrapper" style="flex-direction: column;">
+    <div class="days-header" id="daysHeader"></div>
+
+    <div class="edit-wrapper">
+      <div class="time-labels" id="timeLabels"></div>
+      <div id="editGrid" class="edit-grid"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const hours = 24;
+const increments = 2; // half-hour increments
+const days = 7;
+
+const timeLabelsEl = document.getElementById("timeLabels");
+const daysHeaderEl = document.getElementById("daysHeader");
+const gridEl = document.getElementById("editGrid");
+const cells = [];
+
+// --- Days header ---
+const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+for (let d=0; d<days; d++) {
+  const div = document.createElement("div");
+  div.textContent = dayNames[d];
+  daysHeaderEl.appendChild(div);
+}
+
+// --- Time labels ---
+for (let h=0; h<hours; h++) {
+  for (let i=0; i<increments; i++) {
+    const date = new Date();
+    date.setHours(h, i*30, 0, 0);
+    const label = document.createElement("div");
+    label.textContent = date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    timeLabelsEl.appendChild(label);
+  }
+}
+
+// --- Build 7x48 grid ---
+for (let row=0; row<hours*increments; row++) {
+  for (let day=0; day<days; day++) {
+    const cell = document.createElement("div");
+    cell.classList.add("edit-cell");
+    cell.dataset.day = day;
+    cell.dataset.row = row;
+    cell.addEventListener("click", () => {
+      cell.classList.toggle("active");
+    });
+    gridEl.appendChild(cell);
+    cells.push(cell);
+  }
+}
+</script>
+
+</body>
+</html>
 
