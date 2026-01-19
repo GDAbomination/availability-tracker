@@ -38,7 +38,9 @@ header {
 
 .showcase img {
   width: 100%;
-  height: auto;
+  max-height: calc(100vh - 320px);
+  object-fit: contain;
+
   border-radius: 6px;
   border: 1px solid #2a2a3a;
   background: #0b0b10;
