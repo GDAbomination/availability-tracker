@@ -2,15 +2,76 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Home</title>
+  <title>Availability</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    main {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 24px;
+    }
+
+    h2 {
+      font-size: 2rem;
+      margin-bottom: 24px;
+    }
+
+    /* Grid */
+    .availability-grid {
+      display: grid;
+      grid-template-columns: repeat(24, 1fr); /* 24 hours */
+      gap: 2px;
+    }
+
+    .availability-cell {
+      width: 100%;
+      padding-top: 100%; /* square */
+      position: relative;
+      background: #1a1a2e;
+      border: 1px solid #2a2a3a;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .availability-cell.available {
+      background: #6aa6ff;
+    }
+
+    .availability-cell.other {
+      background: #ff6a6a;
+    }
+
+    /* Inner content to handle click overlay */
+    .availability-cell span {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.7rem;
+      color: #e6e6eb;
+    }
+
+    /* Optional: day labels */
+    .day-labels {
+      display: flex;
+      margin-bottom: 8px;
+      justify-content: space-between;
+    }
+
+    .day-labels span {
+      flex: 1;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #b9b9cc;
+    }
+  </style>
 </head>
 <body>
 
 <header>
   <div class="header-title">
     <img src="icon.png" alt="Studio Icon">
-    <h1>Echo Frontier</h1>
+    <h1>Echo Studio</h1>
   </div>
 </header>
 
@@ -21,11 +82,117 @@
 </nav>
 
 <main>
-  <h2>Home</h2>
-  <p>
-    Welcome to Echo Studio.
-  </p>
+  <h2>Members Availability</h2>
+
+  <div class="day-labels">
+    <span>Sun</span>
+    <span>Mon</span>
+    <span>Tue</span>
+    <span>Wed</span>
+    <span>Thu</span>
+    <span>Fri</span>
+    <span>Sat</span>
+  </div>
+
+  <div id="availabilityGrid" class="availability-grid"></div>
 </main>
 
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.15.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.15.0/firebase-firestore.js";
+
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyADRD-ZSdmtLAChpCJSg2m-eGD8KkZQLAw",
+    authDomain: "echo-frontier.firebaseapp.com",
+    projectId: "echo-frontier",
+    storageBucket: "echo-frontier.firebasestorage.app",
+    messagingSenderId: "483328395754",
+    appId: "1:483328395754:web:8426b8abe728f6fd5e0a93"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // -----------------------------
+  // CONFIG
+  const memberId = prompt("Enter your username"); // temporary simple login
+  const hours = 24;
+  const days = 7;
+
+  const gridEl = document.getElementById("availabilityGrid");
+  const availability = {}; // local copy
+
+  // -----------------------------
+  // Build grid
+  for (let day = 0; day < days; day++) {
+    for (let hour = 0; hour < hours; hour++) {
+      const key = `${day}-${hour}`;
+      const cell = document.createElement("div");
+      cell.classList.add("availability-cell");
+      cell.dataset.key = key;
+      cell.addEventListener("click", () => toggleCell(key, cell));
+      gridEl.appendChild(cell);
+    }
+  }
+
+  // -----------------------------
+  // Toggle local availability
+  function toggleCell(key, cell) {
+    availability[key] = !availability[key];
+    updateCell(cell, availability[key]);
+    saveAvailability();
+  }
+
+  function updateCell(cell, value) {
+    if (value) {
+      cell.classList.add("available");
+    } else {
+      cell.classList.remove("available");
+    }
+  }
+
+  // -----------------------------
+  // Firestore doc
+  const memberDoc = doc(db, "availability", memberId);
+
+  async function saveAvailability() {
+    await setDoc(memberDoc, { slots: availability });
+  }
+
+  async function loadAvailability() {
+    const snapshot = await getDoc(memberDoc);
+    if (snapshot.exists()) {
+      const slots = snapshot.data().slots || {};
+      Object.assign(availability, slots);
+      // update UI
+      for (const [key, val] of Object.entries(slots)) {
+        const cell = gridEl.querySelector(`[data-key="${key}"]`);
+        if (cell) updateCell(cell, val);
+      }
+    }
+  }
+
+  loadAvailability();
+
+  // -----------------------------
+  // Real-time updates for all members
+  const availCollection = collection(db, "availability");
+  onSnapshot(availCollection, (snap) => {
+    snap.docs.forEach(docSnap => {
+      const data = docSnap.data().slots || {};
+      const otherMember = docSnap.id;
+      if (otherMember === memberId) return; // skip yourself
+      for (const [key, val] of Object.entries(data)) {
+        const cell = gridEl.querySelector(`[data-key="${key}"]`);
+        if (cell) {
+          if (val) cell.classList.add("other");
+          else cell.classList.remove("other");
+        }
+      }
+    });
+  });
+</script>
 </body>
 </html>
