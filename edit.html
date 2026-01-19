@@ -4,32 +4,23 @@
 <meta charset="UTF-8">
 <title>Edit Availability</title>
 <style>
-/* ---------- Global ---------- */
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
-body { background: #0f0f14; color: #e6e6eb; }
-header { padding: 32px 24px 20px; text-align: center; }
-.header-title { display: inline-flex; align-items: center; gap: 14px; }
-.header-title img { height: 2.4rem; width: auto; }
-.header-title h1 { font-size: 2.4rem; font-weight: 600; letter-spacing: 0.05em; }
-
-/* ---------- Navigation ---------- */
-nav { position: sticky; top: 0; height: 56px; background: #151520; display: flex; justify-content: center; align-items: center; border-bottom: 1px solid #2a2a3a; }
-nav a { color: #cfcfe8; text-decoration: none; margin: 0 28px; font-weight: 500; }
-nav a:hover { color: #ffffff; }
-nav a.active { color: #6aa6ff; }
-
-/* ---------- Page ---------- */
-main { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
-h2 { font-size: 2rem; margin-bottom: 16px; }
-
-/* ---------- Availability Header ---------- */
-.availability-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
+* { box-sizing: border-box; margin:0; padding:0; font-family: system-ui,sans-serif; }
+body { background: #0f0f14; color:#e6e6eb; }
+header { padding:32px 24px 20px; text-align:center; }
+.header-title { display:inline-flex; align-items:center; gap:14px; }
+.header-title img { height:2.4rem; width:auto; }
+.header-title h1 { font-size:2.4rem; font-weight:600; letter-spacing:0.05em; }
+nav { position:sticky; top:0; height:56px; background:#151520; display:flex; justify-content:center; align-items:center; border-bottom:1px solid #2a2a3a; }
+nav a { color:#cfcfe8; text-decoration:none; margin:0 28px; font-weight:500; }
+nav a:hover { color:#fff; }
+nav a.active { color:#6aa6ff; }
+main { max-width:1200px; margin:40px auto; padding:0 24px; }
+h2 { font-size:2rem; margin-bottom:16px; }
+.availability-header { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px; }
 .availability-header h2 { margin:0; flex:1; }
-#memberSelect { flex:1; max-width:200px; text-align:center; padding:6px 10px; font-size:1rem; border-radius:4px; border:1px solid #2a2a3a; background:#151520; color:#e6e6eb; margin:0 auto; }
+#memberSelect { flex:1; max-width:200px; padding:6px 10px; font-size:1rem; border-radius:4px; border:1px solid #2a2a3a; background:#151520; color:#e6e6eb; margin:0 auto; text-align:center; }
 #saveButton { flex:1; max-width:100px; padding:6px 16px; font-size:1rem; background:#6aa6ff; color:white; border:none; border-radius:4px; cursor:pointer; }
 #saveButton:hover { background:#5590e0; }
-
-/* ---------- Grid ---------- */
 .edit-wrapper { display:flex; flex-direction:column; gap:4px; overflow-x:auto; }
 .days-header { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:4px; }
 .days-header div { text-align:center; color:#b9b9cc; font-size:0.9rem; }
@@ -74,53 +65,53 @@ h2 { font-size: 2rem; margin-bottom: 16px; }
 </main>
 
 <script>
-// -------- Constants --------
-const hours = 24, increments=2, days=7;
-const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-const timeLabelsEl = document.getElementById("timeLabels");
-const daysHeaderEl = document.getElementById("daysHeader");
-const gridEl = document.getElementById("editGrid");
-const memberSelect = document.getElementById("memberSelect");
-const saveButton = document.getElementById("saveButton");
-const cells = [];
+document.addEventListener("DOMContentLoaded", function(){
 
-// -------- Sample JSON --------
-let availabilityData = {
-  "member0": { "displayName":"Default", "slots":[] },
-  "member1": { "displayName":"Speedix08", "slots":[], "timezone":"Australia/Melbourne" },
-  "member2": { "displayName":"GD_Abomination", "slots":[], "timezone":"America/Phoenix" },
-  "member3": { "displayName":"SimLeek", "slots":[], "timezone":"America/Phoenix" },
-  "member4": { "displayName":"Flame", "slots":[], "timezone":"Australia/Melbourne" },
-  "member5": { "displayName":"Lele", "slots":[], "timezone":"America/Detroit" }
+const hours=24, increments=2, days=7;
+const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const timeLabelsEl=document.getElementById("timeLabels");
+const daysHeaderEl=document.getElementById("daysHeader");
+const gridEl=document.getElementById("editGrid");
+const memberSelect=document.getElementById("memberSelect");
+const saveButton=document.getElementById("saveButton");
+const cells=[];
+
+// Sample JSON
+let availabilityData={
+  "member0": { "displayName":"Default","slots":[] },
+  "member1": { "displayName":"Speedix08","slots":[],"timezone":"Australia/Melbourne" },
+  "member2": { "displayName":"GD_Abomination","slots":[],"timezone":"America/Phoenix" },
+  "member3": { "displayName":"SimLeek","slots":[],"timezone":"America/Phoenix" },
+  "member4": { "displayName":"Flame","slots":[],"timezone":"Australia/Melbourne" },
+  "member5": { "displayName":"Lele","slots":[],"timezone":"America/Detroit" }
 };
 
-// -------- Build Dropdown --------
+// Populate dropdown
 for(const id in availabilityData){
-  const opt = document.createElement("option");
+  const opt=document.createElement("option");
   opt.value=id;
   opt.textContent=availabilityData[id].displayName;
   memberSelect.appendChild(opt);
 }
 
-// -------- Build Days Header --------
+// Days header
 for(let d=0; d<days; d++){
   const div=document.createElement("div");
   div.textContent=dayNames[d];
   daysHeaderEl.appendChild(div);
 }
 
-// -------- Build Time Labels --------
+// Time labels
 for(let h=0; h<hours; h++){
   for(let i=0;i<increments;i++){
-    const date=new Date();
-    date.setHours(h,i*30,0,0);
     const div=document.createElement("div");
-    div.textContent=date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const date=new Date(); date.setHours(h,i*30,0,0);
+    div.textContent=date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
     timeLabelsEl.appendChild(div);
   }
 }
 
-// -------- Build 7x48 Grid --------
+// Build 7x48 grid
 for(let row=0; row<hours*increments; row++){
   for(let day=0; day<days; day++){
     const cell=document.createElement("div");
@@ -132,7 +123,7 @@ for(let row=0; row<hours*increments; row++){
   }
 }
 
-// -------- Click + Drag --------
+// Click + drag
 let isDragging=false, dragValue=true;
 function setCell(cell,value,ignoreMember0=false){
   if(ignoreMember0 && memberSelect.value==="member0") return;
@@ -140,19 +131,16 @@ function setCell(cell,value,ignoreMember0=false){
   else cell.classList.remove("active");
 }
 cells.forEach(cell=>{
-  cell.addEventListener("mousedown",e=>{
-    e.preventDefault(); isDragging=true; dragValue=!cell.classList.contains("active"); setCell(cell,dragValue,true);
-  });
+  cell.addEventListener("mousedown",e=>{ e.preventDefault(); isDragging=true; dragValue=!cell.classList.contains("active"); setCell(cell,dragValue,true); });
   cell.addEventListener("mouseenter",()=>{ if(isDragging) setCell(cell,dragValue,true); });
 });
 document.addEventListener("mouseup",()=>isDragging=false);
 
-// -------- Dropdown Change --------
+// Dropdown change
 memberSelect.addEventListener("change",()=>{
   const memberId=memberSelect.value;
   cells.forEach(c=>c.classList.remove("active"));
   if(memberId==="member0") return;
-
   const slots=availabilityData[memberId].slots||[];
   slots.forEach(slot=>{
     const utc=new Date(slot.time);
@@ -165,7 +153,7 @@ memberSelect.addEventListener("change",()=>{
   });
 });
 
-// -------- Save Button --------
+// Save button
 saveButton.addEventListener("click",()=>{
   const memberId=memberSelect.value;
   if(memberId==="member0"){ alert("Cannot save default member"); return; }
@@ -187,7 +175,6 @@ saveButton.addEventListener("click",()=>{
   });
   availabilityData[memberId].slots=slots;
 
-  // Download updated JSON
   const blob=new Blob([JSON.stringify(availabilityData,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
@@ -195,6 +182,8 @@ saveButton.addEventListener("click",()=>{
   URL.revokeObjectURL(url);
   alert("Availability saved!");
 });
+
+}); // DOMContentLoaded
 </script>
 </body>
 </html>
