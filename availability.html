@@ -84,14 +84,17 @@ h2 {
 </nav>
 
 <main>
-  <h2>Members Availability</h2>
-  <button id="editButton" onclick="window.location='edit.html'">Edit Availability</button>
+  <div class="availability-header">
+    <h2>Members Availability</h2>
+    <button id="editButton" onclick="window.location='edit.html'">Edit</button>
+  </div>
 
   <div class="availability-wrapper">
     <div class="time-labels" id="timeLabels"></div>
     <div id="availabilityGrid" class="availability-grid"></div>
   </div>
 </main>
+
 
 <!-- Firebase SDK -->
 <script type="module">
