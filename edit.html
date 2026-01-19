@@ -133,25 +133,47 @@ h2 {
   </div>
 </main>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.15.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.15.0/firebase-firestore.js";
+
+// ----- Firebase setup -----
+const firebaseConfig = {
+  apiKey: "AIzaSyADRD-ZSdmtLAChpCJSg2m-eGD8KkZQLAw",
+  authDomain: "echo-frontier.firebaseapp.com",
+  projectId: "echo-frontier",
+  storageBucket: "echo-frontier.firebasestorage.app",
+  messagingSenderId: "483328395754",
+  appId: "1:483328395754:web:8426b8abe728f6fd5e0a93"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ----- DOM Elements -----
 const hours = 24;
-const increments = 2; // half-hour increments
+const increments = 2;
 const days = 7;
 
 const timeLabelsEl = document.getElementById("timeLabels");
 const daysHeaderEl = document.getElementById("daysHeader");
 const gridEl = document.getElementById("editGrid");
+const memberSelect = document.getElementById("memberSelect");
+const saveButton = document.getElementById("saveButton");
+
+const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const cells = [];
 
-// --- Days header ---
-const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+// ----- Build header and grid -----
+
+// Days header
 for (let d=0; d<days; d++) {
   const div = document.createElement("div");
   div.textContent = dayNames[d];
   daysHeaderEl.appendChild(div);
 }
 
-// --- Time labels ---
+// Time labels
 for (let h=0; h<hours; h++) {
   for (let i=0; i<increments; i++) {
     const date = new Date();
@@ -162,7 +184,7 @@ for (let h=0; h<hours; h++) {
   }
 }
 
-// --- Build 7x48 grid ---
+// Build 7x48 grid
 for (let row=0; row<hours*increments; row++) {
   for (let day=0; day<days; day++) {
     const cell = document.createElement("div");
@@ -174,38 +196,108 @@ for (let row=0; row<hours*increments; row++) {
   }
 }
 
-// --- Click + Drag Selection Logic ---
+// ----- Click + Drag Logic -----
 let isDragging = false;
-let dragValue = true; // whether we're turning cells on or off
+let dragValue = true;
 
 cells.forEach(cell => {
-  // Mouse down: start drag
-  cell.addEventListener("mousedown", (e) => {
-    e.preventDefault(); // prevent text selection
+  cell.addEventListener("mousedown", e => {
+    e.preventDefault();
     isDragging = true;
-    dragValue = !cell.classList.contains("active"); // determine desired state
+    dragValue = !cell.classList.contains("active");
     setCell(cell, dragValue);
   });
-
-  // Mouse enter: apply drag if dragging
   cell.addEventListener("mouseenter", () => {
     if (isDragging) setCell(cell, dragValue);
   });
 });
 
-// Stop dragging on mouse up anywhere
-document.addEventListener("mouseup", () => {
-  isDragging = false;
-});
+document.addEventListener("mouseup", () => isDragging = false);
 
-// --- Set cell state ---
 function setCell(cell, value) {
-  if (value) {
-    cell.classList.add("active");
-  } else {
-    cell.classList.remove("active");
+  if (value) cell.classList.add("active");
+  else cell.classList.remove("active");
+}
+
+// ----- Populate member dropdown from Firestore -----
+async function loadMembers() {
+  // Member0 is default
+  memberSelect.innerHTML = '<option value="member0">Member 0</option>';
+
+  const snapshot = await getDocs(collection(db, "members"));
+  snapshot.forEach(docSnap => {
+    if (docSnap.id !== "member0") {
+      const opt = document.createElement("option");
+      opt.value = docSnap.id;
+      opt.textContent = docSnap.data().name;
+      memberSelect.appendChild(opt);
+    }
+  });
+}
+loadMembers();
+
+// ----- Load availability for a member -----
+async function loadAvailability(memberId) {
+  // Clear all cells
+  cells.forEach(c => c.classList.remove("active"));
+
+  const docSnap = await getDoc(doc(db, "availability", memberId));
+  if (!docSnap.exists()) return;
+  const slots = docSnap.data().slots || {};
+
+  for (const utcStr in slots) {
+    const utcDate = new Date(utcStr);
+
+    // Convert UTC -> local
+    const localDate = new Date(utcDate.getTime() + utcDate.getTimezoneOffset()*60000);
+    const day = localDate.getDay();
+    const hour = localDate.getHours();
+    const minute = localDate.getMinutes();
+    const row = hour*2 + (minute >= 30 ? 1 : 0);
+    const index = row*days + day;
+    if (cells[index]) cells[index].classList.add("active");
   }
 }
+
+// Load default member0 on page load
+loadAvailability("member0");
+
+// Change member selection
+memberSelect.addEventListener("change", () => {
+  loadAvailability(memberSelect.value);
+});
+
+// ----- Save availability -----
+saveButton.addEventListener("click", async () => {
+  const availability = {};
+  cells.forEach(cell => {
+    if (cell.classList.contains("active")) {
+      const day = parseInt(cell.dataset.day);
+      const row = parseInt(cell.dataset.row);
+      const hour = Math.floor(row / 2);
+      const minute = (row % 2) * 30;
+      const localDate = new Date();
+      localDate.setHours(hour, minute, 0, 0);
+
+      // Adjust to correct day
+      const today = new Date();
+      const diff = day - today.getDay();
+      localDate.setDate(localDate.getDate() + diff);
+
+      // Convert local -> UTC
+      const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset()*60000);
+      availability[utcDate.toISOString()] = true;
+    }
+  });
+
+  try {
+    await setDoc(doc(db, "availability", memberSelect.value), { slots: availability });
+    alert("Availability saved successfully!");
+  } catch (error) {
+    console.error("Error saving availability:", error);
+    alert("Error saving availability");
+  }
+});
 </script>
 
 </body>
